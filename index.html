@@ -10,6 +10,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Andika:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
@@ -154,6 +155,57 @@ details.settings summary{cursor:pointer;font-family:var(--display);font-size:20p
 .pal p{margin:0;font-size:13px;color:var(--muted);line-height:1.35}
 .pal.locked .e{filter:grayscale(1) brightness(0);opacity:.18}
 .pal.locked h4{color:var(--muted)}
+.tabs.scroll{overflow-x:auto;scrollbar-width:none}
+.tabs.scroll button{flex:1 0 auto;white-space:nowrap;padding:10px 14px}
+.adm{display:flex;flex-direction:column;gap:16px;min-width:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.stat{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:12px 14px;min-width:0}
+.stat .k{font-size:13px;color:var(--muted);font-weight:700}
+.stat .v{font-family:var(--display);font-size:26px;line-height:1.2;font-variant-numeric:tabular-nums}
+.stat .s{font-size:13px;color:var(--muted);line-height:1.35;overflow-wrap:anywhere}
+.stat.good{border-color:var(--gum);background:var(--gum-soft)}
+.stat.warn{border-color:var(--coral)}
+.strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px 4px;text-align:center;font-size:11px;color:var(--muted)}
+.strip div{display:flex;flex-direction:column;gap:2px;align-items:center;min-width:0}
+.strip b{width:100%;max-width:40px;aspect-ratio:1;border-radius:8px;background:var(--bg);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.strip b.on{background:var(--gum);border-color:var(--gum);color:#fff}
+.strip b.today{outline:2px solid var(--sun);outline-offset:1px}
+.rows{border:2px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden}
+.rowi{display:flex;gap:12px;padding:10px 12px;border-bottom:1px solid var(--line);align-items:flex-start}
+.rowi:last-child{border-bottom:0}
+.rowi>.score{flex:none;min-width:58px;text-align:center;margin-top:1px}
+.ri{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
+.rm{font-size:14px;overflow-wrap:anywhere}
+.rs{flex:none;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.tag{display:inline-block;font-size:12px;color:var(--muted);font-weight:700;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:0 8px;white-space:nowrap}
+.tag.ok{color:var(--gum);border-color:var(--gum)}
+.tbl{overflow-x:auto;border:2px solid var(--line);border-radius:16px;background:var(--card)}
+.tbl table{border-collapse:collapse;width:100%;font-size:15px;min-width:620px}
+.tbl th,.tbl td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl th{font-size:13px;color:var(--muted);background:var(--bg);white-space:nowrap}
+.tbl td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.score{display:inline-block;border-radius:999px;padding:1px 10px;font-weight:700;font-variant-numeric:tabular-nums}
+.score.hi{background:var(--gum-soft)} .score.mid{background:var(--sun-soft)} .score.lo{background:var(--coral-soft)}
+.typed{color:var(--coral);font-family:var(--read)}
+.form textarea,.form input[type=text],.form select,#stuSel{width:100%;font:inherit;padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
+#stuSel{width:auto}
+.form label select{width:auto;margin-left:6px;padding:6px 10px}
+.form textarea{min-height:120px;font-family:var(--read);resize:vertical}
+.chips span{display:inline-flex;align-items:center;gap:4px}
+.chips button{border:0;background:none;color:var(--muted);padding:0 2px;font-weight:700;font-size:16px;line-height:1}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:14px;border-radius:10px}
+.msgrow{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;border:2px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--bg)}
+.msgrow p{margin:0 0 4px;white-space:pre-wrap;overflow-wrap:anywhere}
+.dadmsg{background:var(--sun-soft);border:3px solid var(--sun);border-radius:22px;padding:16px 18px;display:flex;gap:14px;align-items:flex-start}
+.dadmsg .e{font-size:44px;line-height:1}
+.dadmsg .k{font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--coral)}
+.dadmsg p{margin:4px 0 10px;font-size:20px;font-family:var(--read);white-space:pre-wrap;overflow-wrap:anywhere}
+.dadmsg .bonus{font-weight:700;font-size:17px}
+.day.school{background:var(--ocean-soft)}
+.chart{overflow-x:auto}
+.chart svg{width:100%;min-width:300px;height:auto;display:block}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:700;z-index:60;max-width:calc(100% - 32px);text-align:center}
 #fx{position:fixed;inset:0;pointer-events:none;z-index:50}
 @media (max-width:480px){.wcard .w{font-size:24px}.sentence{font-size:20px}.answer input{font-size:20px}.meaning strong{font-size:26px}.brand h1{font-size:26px}.today{grid-template-columns:1fr}.today .roo-big{display:none}.today h2{font-size:28px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -1744,6 +1796,9 @@ chemistry|화학|My sister studies chemistry.
 thorn|가시|Roses have sharp thorns.
 peaceful|평화로운|The lake is quiet and peaceful.
 `;
+/* parent accounts that see the dashboard (the real permission check is in firestore.rules) */
+const ADMINS=((typeof WORDHOP_ADMINS!=="undefined"&&WORDHOP_ADMINS)||["swk810620@gmail.com"]).map(s=>String(s).toLowerCase());
+const LOG_MAX=600;
 
 /* ---------- build the day-by-day course ---------- */
 function parseUnits(txt){const out=[];let u=0;txt.split("\n").forEach(l=>{l=l.trim();if(!l)return;if(l.startsWith("## ")){u=+l.slice(3);return}const p=l.split("|");out.push({w:p[0],m:p[1],ex:p[2],alt:p[3]||"",unit:u})});return out}
@@ -1759,8 +1814,16 @@ const LEARN=[],COURSE=[];
   /* a review test after every 5 study days */
   LEARN.forEach((s,i)=>{COURSE.push(s);if((i+1)%5===0){const cov=LEARN.slice(i-4,i+1);
     COURSE.push({id:"r"+((i+1)/5-1),kind:"review",level:s.level,covers:cov,label:`Day ${cov[0].day}–${s.day}`,words:[]})}})})();
-const dayName=s=>s.kind==="review"?"Review":"Day "+s.day;
-const setById=id=>COURSE.find(s=>s.id===id);
+const dayName=s=>s.kind==="review"?"Review":s.kind==="school"?"School":"Day "+s.day;
+const setTitle=s=>s.kind==="review"?"Review · "+s.label:s.kind==="school"?"School · "+s.label:`Day ${s.day} · ${s.label}`;
+
+/* ---------- settings Dad controls (Ian's app only reads these) ---------- */
+const normCtl=d=>{d=d||{};return {msgs:d.msgs||[],startFrom:d.startFrom||0,skip:d.skip||[],reviewOnly:d.reviewOnly||"",wrong:d.wrong||[],school:d.school||[]}};
+let control=normCtl();
+const schoolSetsOf=ctl=>ctl.school.map(s=>({id:s.id,kind:"school",level:0,label:s.title,at:s.at,words:(s.words||[]).map(w=>({w:w.w,m:w.m||"",ex:w.ex||"",alt:""}))}));
+const allSetsOf=ctl=>COURSE.concat(schoolSetsOf(ctl));
+const findSet=(id,ctl)=>allSetsOf(ctl||control).find(s=>s.id===id);
+const setById=id=>findSet(id,control);
 
 /* ---------- animals unlocked by stars ---------- */
 const PALS=[["🦘","Kangaroo","Kangaroos can't walk backwards.","캥거루는 뒤로 걸을 수 없어요."],["🐨","Koala","Koalas sleep up to 20 hours a day.","코알라는 하루에 20시간까지 자요."],["🐢","Green Sea Turtle","Turtles come back to the beach where they hatched.","태어난 해변으로 돌아와 알을 낳아요."],["🐠","Clownfish","Clownfish live safely inside sea anemones.","말미잘 속에서 안전하게 살아요."],["🦜","Cockatoo","Cockatoos can live for more than 60 years.","60년 넘게 살 수 있어요."],["🐸","Green Tree Frog","Sticky toes help it climb walls and windows.","끈적한 발가락으로 벽도 올라가요."],["🐧","Little Penguin","The smallest penguin in the world.","세계에서 가장 작은 펭귄이에요."],["🐋","Humpback Whale","Humpback whales sing long songs.","혹등고래는 긴 노래를 불러요."],["🦇","Flying Fox","A big bat that eats fruit and flowers.","과일과 꽃을 먹는 큰 박쥐예요."],["🦎","Frill-necked Lizard","It opens a big frill to scare enemies.","목 주름을 활짝 펴서 적을 겁줘요."],["🐬","Bottlenose Dolphin","Dolphins talk with clicks and whistles.","딸깍 소리와 휘파람으로 대화해요."],["🦢","Black Swan","Most swans are white, but Aussie swans are black.","호주 백조는 까만색이에요."],["🦀","Ghost Crab","It runs sideways very fast on the sand.","모래 위를 옆으로 아주 빨리 달려요."],["🦋","Ulysses Butterfly","Its wings are bright blue.","날개가 밝은 파란색이에요."],["🦭","Australian Sea Lion","It can walk on its flippers.","지느러미발로 걸을 수 있어요."],["🐊","Saltwater Crocodile","The biggest reptile in the world.","세계에서 가장 큰 파충류예요."],["🦉","Powerful Owl","The biggest owl in Australia.","호주에서 가장 큰 올빼미예요."],["🐝","Native Bee","Some Aussie bees don't sting at all.","침을 쏘지 않는 호주 벌도 있어요."],["🐍","Carpet Python","A big snake with no venom.","독이 없는 큰 뱀이에요."],["🦑","Giant Cuttlefish","It can change colour in a second.","순식간에 몸 색깔을 바꿔요."],["🐕","Dingo","Australia's wild dog. It howls more than it barks.","호주의 야생 개, 짖기보다 울부짖어요."],["🐡","Pufferfish","It puffs up like a ball when it is scared.","겁나면 공처럼 부풀어요."],["🦅","Wedge-tailed Eagle","Australia's biggest bird of prey.","호주에서 가장 큰 맹금류예요."],["🐙","Blue-ringed Octopus","Small but very dangerous. Never touch it!","작지만 아주 위험해요. 절대 만지면 안 돼요!"],["🐟","Barramundi","It can live in rivers and in the sea.","강과 바다 모두에서 살 수 있어요."],["🐪","Wild Camel","Australia has more wild camels than any other country.","야생 낙타가 세계에서 가장 많은 나라예요."],["🕷️","Huntsman Spider","Big and hairy, but harmless to people.","크고 털이 많지만 사람에겐 해롭지 않아요."],["🦆","Pacific Black Duck","It puts its head under water to find food.","머리를 물속에 넣어 먹이를 찾아요."],["🐞","Ladybird","Ladybirds eat bugs that hurt plants.","식물을 해치는 벌레를 먹어요."],["🦈","Great White Shark","It can smell food from very far away.","아주 멀리서도 냄새를 맡아요."]];
@@ -1768,72 +1831,109 @@ const PAL_AT=PALS.map((_,i)=>15*(i+1));
 
 /* ---------- storage ---------- */
 const KEY="ianWordHop.v1";
-let saved={stars:{},voice:"",rate:0.85,days:{},wrong:{}};
-try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s)saved=Object.assign(saved,s)}catch(e){}
-saved.days=saved.days||{};saved.wrong=saved.wrong||{};
+const normSt=s=>Object.assign({stars:{},days:{},wrong:{},log:[],cleared:{},seen:[]},s||{});
+let saved=normSt({voice:"",rate:0.85});
+try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s)saved=normSt(Object.assign(saved,s))}catch(e){}
 Object.keys(saved.stars).forEach(k=>{
   if(/^\d+$/.test(k)){saved.stars["d"+k]=Math.max(saved.stars["d"+k]||0,saved.stars[k]);delete saved.stars[k]}
   else if(/^u\d+$/.test(k)){const u=+k.slice(1),v=saved.stars[k];for(let c=Math.floor(25*u/10);c<=Math.floor((25*u+24)/10);c++)saved.stars["a"+c]=Math.max(saved.stars["a"+c]||0,v);delete saved.stars[k]}
 });
 function persist(){saved.updatedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(e){}cloud.push()}
 
+/* ---------- dates in Brisbane time (Ian's time zone) ---------- */
+const BRIS=new Intl.DateTimeFormat("en-US",{timeZone:"Australia/Brisbane",year:"numeric",month:"2-digit",day:"2-digit",weekday:"short"});
+const brisParts=t=>{const p={};BRIS.formatToParts(new Date(t)).forEach(x=>p[x.type]=x.value);return p};
+const brisDate=t=>{const p=brisParts(t);return p.year+"-"+p.month+"-"+p.day};
+const brisTime=t=>new Date(t).toLocaleString("ko-KR",{timeZone:"Australia/Brisbane",month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit"});
+const KWD=["일","월","화","수","목","금","토"],EWD=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+function ago(t){const m=Math.round((Date.now()-t)/6e4);if(m<1)return "방금";if(m<60)return m+"분 전";const h=Math.round(m/60);if(h<24)return h+"시간 전";return Math.round(h/24)+"일 전"}
+const dur=ms=>{const s=Math.round((ms||0)/1000);return s<60?s+"초":Math.floor(s/60)+"분 "+String(s%60).padStart(2,"0")+"초"};
+
 /* ---------- cloud sync (Firebase Auth + Firestore), used only when a config is filled in ---------- */
-/* ▼▼ Firebase 콘솔 → 프로젝트 설정 → 내 앱(웹) → SDK 설정의 firebaseConfig 값을 붙여넣으세요 ▼▼ */
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyAEF-7ELO76cQBBnbXqpmG9Hc4vxRo8juA",
-  authDomain: "ian-voca-85951.firebaseapp.com",
-  projectId: "ian-voca-85951",
-  appId: "1:513167044992:web:4578cc34668fa46f319165"
-};
-/* ▲▲ 비워 두면 기기 저장 모드로만 동작해요 ▲▲ */
-const cloud={user:null,status:"off",timer:null,
+/* Firebase 설정은 같은 폴더의 firebase-config.js 에서 읽어요 */
+const cloud={user:null,status:"off",timer:null,err:"",unsubCtl:null,
   ready(){return typeof FIREBASE_CONFIG!=="undefined"&&FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey&&window.firebase},
   doc(){return firebase.firestore().collection("wordhop").doc(this.user.uid)},
-  data(){const {voice,rate,...rest}=saved;return rest},
+  data(){const {voice,rate,...rest}=saved;rest.profile={name:this.user.displayName||"",email:this.user.email||""};return rest},
+  withTimeout(p,ms){return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej({code:"timeout"}),ms))])},
   push(){if(!this.user)return;clearTimeout(this.timer);this.status="saving";this.paint();
-    this.timer=setTimeout(()=>{this.doc().set(this.data()).then(()=>{this.status="saved";this.paint()}).catch(()=>{this.status="error";this.paint()})},1200)},
+    this.timer=setTimeout(()=>{this.withTimeout(this.doc().set(this.data()),12000).then(()=>{this.status="saved";this.err="";this.paint()}).catch(e=>{console.error("Word Hop save",e);this.status="error";this.err=(e&&(e.code||e.message))||"unknown";this.paint()})},1200)},
   async pull(){
-    this.status="syncing";this.paint();
-    try{const snap=await this.doc().get();
-      if(snap.exists){const r=snap.data(),local=saved;
-        const base=(r.updatedAt||0)>(local.updatedAt||0)?r:local;
-        const stars={...(r.stars||{})};Object.entries(local.stars||{}).forEach(([k,v])=>stars[k]=Math.max(stars[k]??0,v));
-        saved=Object.assign({},local,base,{stars,voice:local.voice,rate:local.rate});
+    this.status="syncing";this.err="";this.paint();
+    try{const snap=await this.withTimeout(this.doc().get(),12000);
+      if(snap.exists){const r=normSt(snap.data()),local=saved;
+        const newer=(r.updatedAt||0)>(local.updatedAt||0)?r:local;
+        const maxMerge=(a,b)=>{const o={...a};Object.entries(b).forEach(([k,v])=>o[k]=Math.max(o[k]??0,v));return o};
+        const lm=new Map();r.log.concat(local.log).forEach(e=>lm.set(e.t+":"+e.sid,e));
+        saved=normSt(Object.assign({},local,newer,{stars:maxMerge(r.stars,local.stars),days:maxMerge(r.days,local.days),cleared:maxMerge(r.cleared,local.cleared),
+          log:[...lm.values()].sort((a,b)=>a.t-b.t).slice(-LOG_MAX),seen:[...new Set(r.seen.concat(local.seen))],voice:local.voice,rate:local.rate}));
+        delete saved.profile;
         try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(e){}
       }
-      this.status="saved";await this.doc().set(this.data());render();
-    }catch(e){this.status="error";this.paint()}
+      await this.withTimeout(this.doc().set(this.data()),12000);this.status="saved";this.watchControl();render();
+    }catch(e){console.error("Word Hop sync",e);this.status="error";this.err=(e&&(e.code||e.message))||"unknown";render()}
   },
+  watchControl(){if(this.unsubCtl)this.unsubCtl();
+    this.unsubCtl=this.doc().collection("control").doc("main").onSnapshot(s=>{control=normCtl(s.exists?s.data():null);if(view==="home"||view==="zoo")render()},e=>console.warn("Word Hop control",e))},
   init(){
     if(!this.ready())return;
     firebase.initializeApp(FIREBASE_CONFIG);
-    firebase.auth().onAuthStateChanged(u=>{this.user=u;if(u)this.pull();else{this.status="signedout";render()}});
+    try{firebase.firestore().settings({experimentalAutoDetectLongPolling:true,merge:true})}catch(e){}
+    /* keep the Google login on this device until "로그아웃" (Firebase LOCAL persistence) */
+    try{firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)}catch(e){}
+    /* until Firebase restores the saved login, show "checking" instead of the login button */
+    this.status="checking";render();
+    const giveUp=setTimeout(()=>{if(this.status==="checking"){this.status="signedout";render()}},8000);
+    firebase.auth().onAuthStateChanged(u=>{clearTimeout(giveUp);this.user=u;
+      if(u){if(isAdmin()&&view==="home")view="admin";this.pull()}
+      else{this.status="signedout";if(this.unsubCtl)this.unsubCtl();control=normCtl();adminReset();if(view==="admin")view="home";render()}});
     window.addEventListener("online",()=>this.push());
   },
   signIn(){const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});
     firebase.auth().signInWithPopup(p).catch(e=>{alertBox("로그인하지 못했어요: "+(e.code||e.message))})},
   signOut(){firebase.auth().signOut()},
-  label(){return {saving:"☁ 저장 중…",saved:"☁ 저장됨",syncing:"☁ 불러오는 중…",error:"☁ 저장 실패 · 다시 시도해요",signedout:"☁ 로그인 필요"}[this.status]||""},
+  label(){return {saving:"☁ 저장 중…",saved:"☁ 저장됨",syncing:"☁ 불러오는 중…",error:"☁ 연결 안 됨 (기기에 저장 중)",signedout:"☁ 로그인 필요",checking:"☁ 로그인 확인 중…"}[this.status]||""},
+  help(){const c=this.err;
+    if(/permission-denied/.test(c))return "Firestore 규칙이 막고 있어요. Firestore → 규칙 탭에 firestore.rules 내용을 붙여넣고 '게시'했는지 확인해 주세요.";
+    if(/not-found|does not exist|NOT_FOUND/i.test(c))return "Firestore 데이터베이스가 아직 없어요. Firebase 콘솔 → Firestore Database → '데이터베이스 만들기'를 해 주세요. 이름은 기본값 (default) 그대로 두세요.";
+    if(/timeout|unavailable|offline/i.test(c))return "Firestore에 연결하지 못했어요. ① Firestore 데이터베이스를 만들었는지 ② 광고 차단·콘텐츠 차단기나 회사 네트워크/VPN이 firestore.googleapis.com을 막고 있지 않은지 확인해 주세요.";
+    return "동기화 오류: "+c;},
   paint(){const el=document.getElementById("cloudPill");if(el)el.textContent=this.label()}
 };
 function alertBox(msg){const p=document.getElementById("cloudMsg");if(p){p.textContent=msg;p.hidden=false}}
+const isAdmin=()=>!!(cloud.user&&cloud.user.emailVerified!==false&&ADMINS.includes((cloud.user.email||"").toLowerCase()));
 
 /* ---------- helpers ---------- */
 const $=s=>document.querySelector(s);
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-function findForm(word,ex){const m=ex.match(new RegExp("\\b("+word+"\\w*)","i"));return m?{form:m[1],idx:m.index}:{form:word,idx:-1}}
+const reEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+function findForm(word,ex){if(!ex)return {form:word,idx:-1};const m=ex.match(new RegExp("\\b("+reEsc(word)+"\\w*)","i"));return m?{form:m[1],idx:m.index}:{form:word,idx:-1}}
 const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const wkey=(sid,w)=>sid+":"+w;
+function toast(m){let el=document.getElementById("toast");if(!el){el=document.createElement("div");el.id="toast";el.className="toast";el.setAttribute("role","status");document.body.appendChild(el)}el.textContent=m;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2400)}
 const STAR='<svg viewBox="0 0 24 24"><path d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.3l-5.8 3.1 1.2-6.5L2.6 9.4l6.5-.8z" fill="FILL" stroke="var(--sun)" stroke-width="1.6" stroke-linejoin="round"/></svg>';
 const starRow=(n,max=3)=>'<span class="stars" aria-label="'+n+' stars">'+Array.from({length:max},(_,i)=>STAR.replace("FILL",i<n?"var(--sun)":"none")).join("")+"</span>";
 const SPK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
 const ROO='<svg viewBox="0 0 64 64"><path d="M14 58c6-1 10-4 12-9l6 1c3 0 6 2 8 6l2 2h6l-3-4c-2-3-2-6-1-9 3-6 2-13-3-17l2-8c1-3 4-5 6-4l-1-4c-3-1-6 1-8 3l-2 2-3-6c-1-2-3-2-4 0l1 7c-4 3-7 8-8 13-2 5-1 9 0 12-5 4-10 9-12 14z" fill="#c98345"/><circle cx="37" cy="13" r="1.6" fill="#16324a"/><path d="M30 34c-2 2-3 5-2 8" stroke="#16324a" stroke-width="1.6" fill="none" stroke-linecap="round"/><ellipse cx="34" cy="38" rx="4" ry="5" fill="#e8b27c"/></svg>';
 const FLAG='<svg viewBox="0 0 26 40"><rect x="2" y="0" width="3" height="40" fill="var(--muted)"/><path d="M5 2h18l-5 6 5 6H5z" fill="var(--coral)"/></svg>';
 
-const totalStars=()=>COURSE.reduce((a,s)=>a+(saved.stars[s.id]||0),0);
+/* ---------- progress rules (pure, shared by Ian's app and Dad's dashboard) ---------- */
+const bonusOf=ctl=>ctl.msgs.reduce((a,m)=>a+(+m.bonus||0),0);
+const totalStarsFor=(st,ctl)=>allSetsOf(ctl).reduce((a,s)=>a+(st.stars[s.id]||0),0)+bonusOf(ctl);
+const totalStars=()=>totalStarsFor(saved,control);
 const palsOpen=n=>PAL_AT.filter(t=>n>=t).length;
-const nextSet=()=>COURSE.find(s=>saved.stars[s.id]==null)||COURSE[COURSE.length-1];
-const wrongList=()=>Object.values(saved.wrong).sort((a,b)=>b.n-a.n);
+function nextSetFor(st,ctl){const skip=new Set(ctl.skip);
+  /* a review only counts once Ian has studied at least one of its 5 days (jumping ahead skips empty reviews) */
+  const ok=s=>st.stars[s.id]==null&&!skip.has(s.id)&&(s.kind!=="review"||s.covers.some(c=>st.stars[c.id]!=null));
+  const start=Math.max(0,Math.min(ctl.startFrom||0,COURSE.length-1));
+  return COURSE.find((s,i)=>i>=start&&ok(s))||COURSE.find(ok)||COURSE[COURSE.length-1]}
+const nextSet=()=>nextSetFor(saved,control);
+function wrongListFor(st,ctl){const out=Object.values(st.wrong).map(x=>({...x}));
+  ctl.wrong.forEach(x=>{const k=wkey(x.sid,x.w);if(!st.wrong[k]&&!((st.cleared[k]||0)>x.at)&&!out.some(o=>wkey(o.sid,o.w)===k))out.push({w:x.w,sid:x.sid,n:0,dad:true})});
+  return out.sort((a,b)=>b.n-a.n)}
+const wrongList=()=>wrongListFor(saved,control);
+const isReviewDay=()=>!!control.reviewOnly&&control.reviewOnly===brisDate(Date.now());
 
 /* ---------- sound ---------- */
 let actx;
@@ -1852,7 +1952,7 @@ function loadVoices(){
 }
 if(hasTTS){speechSynthesis.onvoiceschanged=()=>loadVoices()}
 function speak(text,onend){
-  if(!hasTTS){onend&&onend();return}
+  if(!hasTTS||!text){onend&&onend();return}
   speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(text);
   u.lang=voice?voice.lang:"en-AU"; if(voice)u.voice=voice; u.rate=saved.rate;
@@ -1875,41 +1975,60 @@ let view="home",setId=null,mode="study",readingAll=false,T=null,lastView="";
 const app=$("#app");
 function render(){
   if(lastView!==view+mode+setId){stopSpeak();lastView=view+mode+setId}
-  if(view==="home")renderHome();else if(view==="zoo")renderZoo();else renderDay();
+  if(view==="admin"&&isAdmin())renderAdmin();
+  else{if(view==="admin")view="home";if(view==="home")renderHome();else if(view==="zoo")renderZoo();else renderDay()}
+  const ta=$("#toAdmin");if(ta)ta.onclick=()=>{view="admin";render();scrollTo(0,0)};
 }
 function go(v,id,m){view=v;setId=id??null;if(m)mode=m;T=null;render();scrollTo(0,0)}
 const header=back=>`<header class="top">
   ${back?'<button class="btn ghost" id="back">← Home</button>':`<div class="brand"><div style="width:52px;height:52px">${ROO}</div><div><h1>Ian's Word Hop</h1><small>하루 10단어 · Day 1–${LEARN.length} · 5일마다 복습</small></div></div>`}
-  <div class="pills">${cloud.ready()?`<span class="pill cloud" id="cloudPill">${cloud.label()}</span>`:""}<span class="pill">${starRow(1,1)} ${totalStars()}</span></div></header>`;
+  <div class="pills">${isAdmin()?'<button class="btn ghost" id="toAdmin">Parent dashboard</button>':""}${cloud.ready()?`<span class="pill cloud" id="cloudPill">${cloud.label()}</span>`:""}<span class="pill">${starRow(1,1)} ${totalStars()}</span></div></header>`;
 function accountHTML(){
   if(!cloud.ready())return "";
+  if(cloud.status==="checking")return "";
   if(!cloud.user)return `<section class="panel signin"><h3>기록을 클라우드에 저장하기</h3>
     <p class="note">Google 계정으로 로그인하면 별, 진도, 오답 노트가 저장돼요. 다른 기기에서도 같은 계정으로 로그인하면 이어서 할 수 있어요.</p>
     <div class="row"><button class="btn" id="signin">Google로 로그인</button></div><p class="note" id="cloudMsg" hidden></p></section>`;
+  if(cloud.status==="error")return `<section class="panel signin"><h3>클라우드에 연결하지 못했어요</h3>
+    <p class="note">${esc(cloud.help())}</p><p class="note">오류 코드: <code>${esc(cloud.err)}</code> · 기록은 이 기기에 계속 저장되고 있어요.</p>
+    <div class="row"><button class="btn" id="retrySync">다시 연결</button></div></section>`;
   return "";
 }
 
 /* ---------- home ---------- */
 function renderHome(){
-  const nx=nextSet(),done=COURSE.filter(s=>saved.stars[s.id]!=null).length,isRev=nx.kind==="review";
+  const nx=nextSet(),done=COURSE.filter(s=>saved.stars[s.id]!=null).length;
   const daysDone=LEARN.filter(s=>saved.stars[s.id]!=null).length;
   const stars=totalStars(),open=palsOpen(stars),nextAt=PAL_AT[open];
   const wl=wrongList();
+  const revDay=isReviewDay()&&(wl.length>0||daysDone>0);
+  const isRev=!revDay&&nx.kind==="review";
+  const unseen=control.msgs.filter(m=>!saved.seen.includes(m.id)).sort((a,b)=>b.t-a.t);
+  const sch=schoolSetsOf(control);
   const voiceOpts=voices.map(v=>`<option value="${esc(v.voiceURI)}"${voice&&v.voiceURI===voice.voiceURI?" selected":""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("");
   const isAU=voice&&/en[-_]AU/i.test(voice.lang);
-  const tile=s=>`<button class="day${s.kind==="plan"?" plan":""}${s.kind==="review"?" review":""}${saved.stars[s.id]!=null?" done":""}${s===nx?" next":""}" data-set="${s.id}"><span class="n">${dayName(s)}</span><span class="t">${esc(s.label)}</span>${starRow(saved.stars[s.id]||0)}</button>`;
+  const tile=s=>`<button class="day${s.kind==="plan"?" plan":""}${s.kind==="review"?" review":""}${s.kind==="school"?" school":""}${saved.stars[s.id]!=null?" done":""}${s===nx&&!revDay?" next":""}" data-set="${s.id}"><span class="n">${dayName(s)}</span><span class="t">${esc(s.label)}</span>${starRow(saved.stars[s.id]||0)}</button>`;
   const lv=n=>COURSE.filter(s=>s.level===n);
   const lvDone=n=>lv(n).filter(s=>saved.stars[s.id]!=null).length;
-  app.innerHTML=header(false)+accountHTML()+`
-  <section class="today">
-    <div class="roo-big" style="width:72px;height:72px">${ROO}</div>
-    <div>
+  const todayCard=revDay?`
+      <div class="eyebrow">Review day · 오늘은 복습하는 날</div>
+      <h2>${wl.length?"Tricky words":"Mix test"}</h2>
+      <p>아빠가 오늘은 새 단어 대신 복습을 하자고 했어요.</p>
+      <div class="bar"><i style="width:${(daysDone/LEARN.length*100).toFixed(1)}%"></i></div>
+      <div class="row"><button class="btn green big" id="start">Start review</button><span class="note">${daysDone} / ${LEARN.length} days done</span></div>`:`
       <div class="eyebrow">${isRev?"Review time · 복습 시험":"Today's words · 오늘의 단어"}</div>
       <h2>${dayName(nx)} · ${esc(nx.label)}</h2>
       <p>${isRev?"지난 5일 단어 중 오답 노트 단어 위주로 10문제":nx.words.slice(0,4).map(w=>esc(w.w)).join(", ")+" …"}</p>
       <div class="bar" aria-label="${daysDone} of ${LEARN.length} days"><i style="width:${(daysDone/LEARN.length*100).toFixed(1)}%"></i></div>
-      <div class="row"><button class="btn green big" id="start">Start ${dayName(nx)}</button><span class="note">${daysDone} / ${LEARN.length} days done</span></div>
-    </div>
+      <div class="row"><button class="btn green big" id="start">Start ${dayName(nx)}</button><span class="note">${daysDone} / ${LEARN.length} days done</span></div>`;
+  app.innerHTML=header(false)+accountHTML()+(unseen.length?`
+  <section class="dadmsg" aria-live="polite"><div class="e">📬</div><div style="min-width:0">
+    <div class="k">Message from Dad${unseen.length>1?` · 1 of ${unseen.length}`:""}</div>
+    <p>${esc(unseen[0].text)}</p>${unseen[0].bonus?`<p class="bonus">+${+unseen[0].bonus} ★ bonus stars!</p>`:""}
+    <button class="btn sun" id="msgOk">Thanks, Dad!</button></div></section>`:"")+`
+  <section class="today">
+    <div class="roo-big" style="width:72px;height:72px">${ROO}</div>
+    <div>${todayCard}</div>
   </section>
   <div class="cards3">
     <section class="panel">
@@ -1920,12 +2039,13 @@ function renderHome(){
     </section>
     <section class="panel">
       <h3>Tricky words · 오답 노트</h3>
-      ${wl.length?`<div class="chips">${wl.slice(0,12).map(x=>`<span>${esc(x.w)}<small>×${x.n}</small></span>`).join("")}</div>
+      ${wl.length?`<div class="chips">${wl.slice(0,12).map(x=>`<span>${esc(x.w)}<small>${x.dad?"Dad":"×"+x.n}</small></span>`).join("")}</div>
       <p class="note">${wl.length}개. 다시 시험에서 맞히면 노트에서 빠져요.</p>
       <button class="btn sun" id="tricky">Practise tricky words</button>`
       :'<p class="note">시험에서 틀린 단어가 여기에 모여요. 아직 없어요!</p>'}
     </section>
   </div>
+  ${sch.length?`<details class="level" open><summary>School words <span>아빠가 넣은 학교 단어 · ${sch.filter(s=>saved.stars[s.id]!=null).length}/${sch.length}</span></summary><div class="days">${sch.slice().reverse().map(tile).join("")}</div></details>`:""}
   <details class="level"${nx.level===1?" open":""}><summary>Level 1 <span>Units 1–30 + 15-Day words · ${lvDone(1)}/${lv(1).length}</span></summary><div class="days">${lv(1).map(tile).join("")}</div></details>
   <details class="level"${nx.level===2?" open":""}><summary>Level 2 <span>Bricks 3100 · ${lvDone(2)}/${lv(2).length}</span></summary><div class="days">${lv(2).map(tile).join("")}</div></details>
   <div class="row"><button class="btn ghost" id="mix"${done?"":" disabled"}>Mix test · 공부한 단어 섞어서 10문제</button></div>
@@ -1938,8 +2058,10 @@ function renderHome(){
   </details>
   ${cloud.user?`<details class="panel settings"><summary>Account</summary><p class="note">${esc(cloud.user.email||cloud.user.displayName||"")} 계정에 저장 중이에요.</p><div class="row"><button class="btn ghost" id="signout">로그아웃</button></div></details>`:""}`;
   const si=$("#signin");if(si)si.onclick=()=>cloud.signIn();
+  const rs=$("#retrySync");if(rs)rs.onclick=()=>cloud.pull();
   const so=$("#signout");if(so)so.onclick=()=>cloud.signOut();
-  $("#start").onclick=()=>go("day",nx.id,isRev?"test":"study");
+  const mo=$("#msgOk");if(mo)mo.onclick=()=>{const m=unseen[0];saved.seen.push(m.id);persist();if(m.bonus){confetti();speak(`You got ${m.bonus} bonus stars!`)}renderHome()};
+  $("#start").onclick=()=>revDay?go("day",wl.length?"tricky":"mix","test"):go("day",nx.id,isRev?"test":"study");
   $("#zoo").onclick=()=>go("zoo");
   const tr=$("#tricky");if(tr)tr.onclick=()=>go("day","tricky","test");
   app.querySelectorAll("[data-set]").forEach(b=>b.onclick=()=>go("day",b.dataset.set,b.dataset.set[0]==="r"?"test":"study"));
@@ -1953,7 +2075,7 @@ function renderHome(){
 function renderZoo(){
   const stars=totalStars(),open=palsOpen(stars);
   app.innerHTML=header(true)+`
-  <section class="panel"><h2 style="font-size:28px">Aussie Animal Zoo</h2><p class="note">별을 모으면 호주 동물 친구가 한 마리씩 와요. ${open} / ${PALS.length}</p></section>
+  <section class="panel"><h2 style="font-size:28px">Aussie Animal Zoo</h2><p class="note">별 15개마다 호주 동물 친구가 한 마리씩 와요. ${open} / ${PALS.length}</p></section>
   <div class="zoo">${PALS.map((p,i)=>i<open?`<article class="pal"><div class="e">${p[0]}</div><h4>${esc(p[1])}</h4><p>${esc(p[2])}</p><p>${esc(p[3])}</p><button class="icon-btn" data-say="${i}" aria-label="Hear about the ${esc(p[1])}">${SPK}</button></article>`
     :`<article class="pal locked"><div class="e">${p[0]}</div><h4>???</h4><p>${PAL_AT[i]} ★ needed</p></article>`).join("")}</div>`;
   $("#back").onclick=()=>go("home");
@@ -1963,8 +2085,9 @@ function renderZoo(){
 /* ---------- day view ---------- */
 function renderDay(){
   const s=setById(setId);
-  const special={mix:"Mix test",tricky:"Tricky words"}[setId]||(s.kind==="review"?"Review · "+s.label:"");
-  const title=special||`Day ${s.day} · ${s.label}`;
+  const special={mix:"Mix test",tricky:"Tricky words"}[setId]||(s&&s.kind==="review"?setTitle(s):"");
+  if(!special&&!s){go("home");return}
+  const title=special||setTitle(s);
   if(special)mode="test";
   app.innerHTML=header(true)+`
   <h2 style="font-size:28px">${esc(title)}</h2>
@@ -1981,7 +2104,7 @@ function renderStudy(){
   <div class="list">${ws.map((x,i)=>{const f=findForm(x.w,x.ex);const ex=f.idx>=0?esc(x.ex.slice(0,f.idx))+"<b>"+esc(f.form)+"</b>"+esc(x.ex.slice(f.idx+f.form.length)):esc(x.ex);
     return `<article class="wcard" id="c${i}"><div><div class="w">${esc(x.w)}</div><div class="m">${esc(x.m)}</div></div>
     <div><button class="icon-btn" data-sw="${i}" aria-label="Say ${esc(x.w)}">${SPK}</button></div>
-    <p class="ex">${ex} <button class="icon-btn" style="width:40px;height:40px;vertical-align:middle;margin-left:4px" data-se="${i}" aria-label="Read sentence">${SPK}</button></p></article>`}).join("")}</div>
+    ${x.ex?`<p class="ex">${ex} <button class="icon-btn" style="width:40px;height:40px;vertical-align:middle;margin-left:4px" data-se="${i}" aria-label="Read sentence">${SPK}</button></p>`:""}</article>`}).join("")}</div>
   <div class="row" style="margin-top:16px"><button class="btn" id="goTest">Ready? Take the test →</button></div>`;
   app.querySelectorAll("[data-sw]").forEach(b=>b.onclick=()=>{readingAll=false;clearPlaying();speak(ws[+b.dataset.sw].w)});
   app.querySelectorAll("[data-se]").forEach(b=>b.onclick=()=>{readingAll=false;clearPlaying();speak(ws[+b.dataset.se].ex)});
@@ -1991,36 +2114,38 @@ function renderStudy(){
     readingAll=true;let i=0;
     const step=()=>{clearPlaying();if(!readingAll||i>=ws.length){readingAll=false;return}
       const c=$("#c"+i);if(!c){readingAll=false;return}c.classList.add("playing");c.scrollIntoView({block:"nearest",behavior:"smooth"});
-      const x=ws[i++];speak(x.w,()=>{if(!readingAll)return;setTimeout(()=>speak(x.ex,()=>setTimeout(step,500)),350)})};
+      const x=ws[i++];speak(x.w,()=>{if(!readingAll)return;setTimeout(()=>x.ex?speak(x.ex,()=>setTimeout(step,500)):setTimeout(step,500),350)})};
     step();
   };
 }
 function clearPlaying(){app.querySelectorAll(".wcard.playing").forEach(c=>c.classList.remove("playing"))}
 
 /* ---------- test: meaning + sentence with a blank, spell the word ---------- */
-const wkey=(sid,w)=>sid+":"+w;
-function newTest(list){return {items:shuffle(list).map(x=>({...x,ans:findForm(x.w,x.ex)})),i:0,score:0,streak:0,best:0,miss:[],state:"ask",retry:false,starsBefore:totalStars()}}
+function newTest(list){return {items:shuffle(list).map(x=>({...x,typed:[],ans:findForm(x.w,x.ex)})),i:0,score:0,streak:0,best:0,miss:[],state:"ask",retry:false,cleared:0,start:Date.now(),starsBefore:totalStars()}}
 function renderTest(){
   if(!T){
     const cur=setById(setId);
+    const wlKeys=new Set(wrongList().map(x=>wkey(x.sid,x.w)));
     if(setId==="mix"){const pool=[];LEARN.forEach(s=>{if(saved.stars[s.id]!=null)s.words.forEach(w=>pool.push({...w,sid:s.id,from:"Day "+s.day}))});T=newTest(shuffle(pool).slice(0,10))}
     else if(cur&&cur.kind==="review"){
       const pool=cur.covers.flatMap(s=>s.words.map(w=>({...w,sid:s.id,from:"Day "+s.day})));
-      const tricky=shuffle(pool.filter(w=>saved.wrong[wkey(w.sid,w.w)])),rest=shuffle(pool.filter(w=>!saved.wrong[wkey(w.sid,w.w)]));
+      const tricky=shuffle(pool.filter(w=>wlKeys.has(wkey(w.sid,w.w)))),rest=shuffle(pool.filter(w=>!wlKeys.has(wkey(w.sid,w.w))));
       T=newTest(tricky.concat(rest).slice(0,10))}
-    else if(setId==="tricky"){const wl=wrongList().slice(0,10);T=newTest(wl.map(x=>{const s=setById(x.sid);const w=s&&s.words.find(y=>y.w===x.w);return w?{...w,sid:x.sid,from:"Day "+s.day}:null}).filter(Boolean))}
-    else T=newTest(setById(setId).words.map(w=>({...w,sid:setId})));
+    else if(setId==="tricky"){const wl=wrongList().slice(0,10);T=newTest(wl.map(x=>{const s=setById(x.sid);const w=s&&s.words.find(y=>y.w===x.w);return w?{...w,sid:x.sid,from:dayName(s)}:null}).filter(Boolean))}
+    else T=newTest(cur.words.map(w=>({...w,sid:setId})));
     if(!T.items.length){go("home");return}
   }
   if(T.i>=T.items.length)return renderResult();
   const q=T.items[T.i],n=T.items.length;
   const pos=8+(T.i/n)*78;
-  const before=esc(q.ex.slice(0,q.ans.idx)),after=esc(q.ex.slice(q.ans.idx+q.ans.form.length));
+  const hasBlank=q.ans.idx>=0;
+  const before=hasBlank?esc(q.ex.slice(0,q.ans.idx)):"",after=hasBlank?esc(q.ex.slice(q.ans.idx+q.ans.form.length)):"";
+  const isRevTest=(setById(setId)||{}).kind==="review";
   $("#pane").innerHTML=`
   <div class="track" aria-hidden="true"><div class="ground"></div><div class="flag">${FLAG}</div><div class="roo" id="roo" style="left:${pos}%">${ROO}</div></div>
   <section class="qcard">
-    <div class="qmeta"><span>Question ${T.i+1} / ${n}${q.from&&(setId in{mix:1,tricky:1}||setId[0]==="r")?" · "+q.from:""}</span><span>Score ${T.score}${T.streak>=2?` · <span class="streak">${T.streak} in a row!</span>`:""}</span></div>
-    <div class="meaning">뜻 · Meaning<strong>${esc(q.m.replace(/\s*\(호주:[^)]*\)/,""))}</strong></div>
+    <div class="qmeta"><span>Question ${T.i+1} / ${n}${q.from&&(setId==="mix"||setId==="tricky"||isRevTest)?" · "+esc(q.from):""}</span><span>Score ${T.score}${T.streak>=2?` · <span class="streak">${T.streak} in a row!</span>`:""}</span></div>
+    <div class="meaning">뜻 · Meaning<strong>${esc((q.m||"").replace(/\s*\(호주:[^)]*\)/,""))}</strong></div>
     <p class="sentence" id="sent">${before}<span class="blank" id="blank">______</span>${after}</p>
     <div class="answer">
       <input id="ans" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="Type the word" aria-label="Your answer">
@@ -2036,15 +2161,19 @@ function renderTest(){
     const ok=[q.ans.form,q.w,q.alt].filter(Boolean).map(s=>s.toLowerCase()).includes(v);
     const bl=$("#blank"),fb=$("#fb"),k=wkey(q.sid,q.w);
     if(ok){
-      if(!T.retry){T.score++;T.streak++;T.best=Math.max(T.best,T.streak);if((setId==="tricky"||setId[0]==="r")&&saved.wrong[k]){delete saved.wrong[k];T.cleared=(T.cleared||0)+1}}
+      if(!T.retry){T.score++;T.streak++;T.best=Math.max(T.best,T.streak);
+        if(setId==="tricky"||isRevTest){
+          const inNote=!!saved.wrong[k]||control.wrong.some(x=>wkey(x.sid,x.w)===k);
+          if(inNote){delete saved.wrong[k];saved.cleared[k]=Date.now();T.cleared++}}}
       beep(true);bl.textContent=q.ans.form;bl.className="blank ok";inp.className="ok";
       const praise=["Great job!","Awesome!","Spot on!","You legend!","Brilliant!","Ripper!"][Math.floor(Math.random()*6)];
       fb.className="feedback ok";fb.textContent=praise+(v===q.w.toLowerCase()&&q.w.toLowerCase()!==q.ans.form.toLowerCase()?` 문장에서는 "${q.ans.form}" 이에요.`:"");
       const roo=$("#roo");roo.style.left=(8+((T.i+1)/n)*78)+"%";roo.classList.add("hop");
-      speak(q.ex);finish();
+      speak(q.ex||q.w);finish();
     }else{
+      q.typed.push(v.slice(0,40));
       T.streak=0;beep(false);inp.className="bad";const sn=$("#sent");sn.classList.remove("shake");void sn.offsetWidth;sn.classList.add("shake");
-      if(!T.retry){T.retry=true;if(!T.miss.find(m=>m.w===q.w))T.miss.push(q);
+      if(!T.retry){T.retry=true;if(!T.miss.includes(q))T.miss.push(q);
         saved.wrong[k]={w:q.w,sid:q.sid,n:((saved.wrong[k]||{}).n||0)+1};persist();
         fb.className="feedback bad";fb.textContent="Not quite. Try once more! (다시 한 번)";inp.select()}
       else{bl.textContent=q.ans.form;bl.className="blank bad";fb.className="feedback bad";fb.textContent=`정답은 "${q.ans.form}" — 철자를 잘 보고 넘어가요.`;speak(q.ans.form);finish()}
@@ -2053,13 +2182,23 @@ function renderTest(){
   $("#check").onclick=check;
   inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();check()}};
 }
+function logTest(n,s){
+  const cur=setById(setId);
+  const kind=T.noSave?"redo":setId==="mix"?"mix":setId==="tricky"?"tricky":cur.kind==="review"?"review":cur.kind==="school"?"school":"day";
+  const sid=T.noSave?"redo":setId;
+  const label=kind==="redo"?"틀린 단어 다시":kind==="mix"?"Mix test":kind==="tricky"?"Tricky words":setTitle(cur);
+  saved.log.push({t:Date.now(),sid,kind,label,n,score:s,ms:Date.now()-T.start,first:!saved.log.some(l=>l.sid===sid),
+    miss:T.miss.map(m=>({w:m.w,sid:m.sid,typed:m.typed.slice(0,3)}))});
+  if(saved.log.length>LOG_MAX)saved.log=saved.log.slice(-LOG_MAX);
+}
 function renderResult(){
   const n=T.items.length,s=T.score,r=s/n;
   const stars=r===1?3:r>=.8?2:r>=.5?1:0;
-  const isDay=!(setId in {mix:1,tricky:1})&&!T.noSave;
+  const isDay=!(setId==="mix"||setId==="tricky")&&!T.noSave;
   if(!T.saved){
     if(isDay)saved.stars[setId]=Math.max(saved.stars[setId]||0,stars);
-    const k=ymd(new Date());saved.days[k]=(saved.days[k]||0)+1;persist();T.saved=true;
+    const k=ymd(new Date());saved.days[k]=(saved.days[k]||0)+1;
+    logTest(n,s);persist();T.saved=true;
     T.newPals=PALS.slice(palsOpen(T.starsBefore),palsOpen(totalStars()));
   }
   if(!T.fx&&(r>=.8||T.newPals.length)){confetti();T.fx=true}
@@ -2084,10 +2223,218 @@ function renderResult(){
     </div>
   </section>`;
   T.newPals.forEach(p=>setTimeout(()=>speak("New friend! "+p[1]+"."),900));
-  const redo=$("#redo");if(redo)redo.onclick=()=>{const m=T.miss.map(({ans,...x})=>x);T=newTest(m);T.noSave=true;renderTest()};
+  const redo=$("#redo");if(redo)redo.onclick=()=>{const m=T.miss.map(({ans,typed,...x})=>x);T=newTest(m);T.noSave=true;renderTest()};
   const nd=$("#nextDay");if(nd)nd.onclick=()=>go("day",nx.id,nx.kind==="review"?"test":"study");
   $("#again").onclick=()=>{T=null;renderTest()};
   $("#home").onclick=()=>go("home");
+}
+
+/* =====================================================================
+   Parent dashboard (shown only to ADMINS; Firestore rules enforce access)
+   ===================================================================== */
+const A={students:null,loading:false,uid:null,st:null,ctl:null,tab:"overview",err:"",more:30,unsub:[]};
+function adminReset(){A.unsub.forEach(f=>{try{f()}catch(e){}});Object.assign(A,{students:null,loading:false,uid:null,st:null,ctl:null,err:"",more:30,unsub:[]})}
+const db=()=>firebase.firestore();
+const stuRef=uid=>db().collection("wordhop").doc(uid);
+function adminLoad(){
+  if(A.loading)return;A.loading=true;A.err="";
+  db().collection("wordhop").get().then(qs=>{A.loading=false;
+    A.students=qs.docs.filter(d=>d.id!==cloud.user.uid).map(d=>{const x=d.data()||{},p=x.profile||{};return {uid:d.id,name:p.name||"",email:p.email||"",updatedAt:x.updatedAt||0}}).sort((a,b)=>b.updatedAt-a.updatedAt);
+    if(A.students.length&&!A.uid)adminWatch(A.students[0].uid);else render()})
+  .catch(e=>{A.loading=false;A.students=[];A.err=e.code||e.message;render()});
+}
+function adminWatch(uid){
+  A.unsub.forEach(f=>{try{f()}catch(e){}});A.uid=uid;A.st=null;A.ctl=null;A.more=30;
+  const fail=e=>{A.err=e.code||e.message;if(view==="admin")renderAdmin()};
+  A.unsub=[stuRef(uid).onSnapshot(s=>{A.st=normSt(s.data());if(view==="admin")renderAdmin()},fail),
+    stuRef(uid).collection("control").doc("main").onSnapshot(s=>{A.ctl=normCtl(s.exists?s.data():null);if(view==="admin")renderAdmin()},fail)];
+  render();
+}
+function saveCtl(fn,msg){
+  const c=JSON.parse(JSON.stringify(A.ctl));fn(c);A.ctl=c;renderAdmin();
+  return stuRef(A.uid).collection("control").doc("main").set(c).then(()=>toast(msg||"저장했어요")).catch(e=>toast("저장하지 못했어요: "+(e.code||e.message)));
+}
+const studentName=()=>{const s=(A.students||[]).find(x=>x.uid===A.uid);return s?(s.name||s.email||"학생"):"학생"};
+const scoreCls=(s,n)=>{const p=n?s/n:0;return p>=.8?"hi":p>=.5?"mid":"lo"};
+const KIND_KO={day:"새 Day",review:"복습",tricky:"오답 노트",mix:"Mix",school:"학교 단어",redo:"틀린 단어 다시"};
+const allWords=(()=>{let c=null;return ()=>c||(c=(()=>{const seen=new Set(),out=[];LEARN.forEach(s=>s.words.forEach(w=>{const k=w.w.toLowerCase();if(!seen.has(k)){seen.add(k);out.push({w:w.w,m:w.m,sid:s.id,day:s.day})}}));return out})())})();
+
+function adminStats(st,ctl){
+  const logs=st.log.slice().sort((a,b)=>b.t-a.t),now=Date.now(),today=brisDate(now);
+  const perDay={};logs.forEach(l=>{const d=brisDate(l.t);perDay[d]=(perDay[d]||0)+1});
+  Object.entries(st.days).forEach(([d,c])=>{if(!perDay[d])perDay[d]=c});
+  const wd=EWD.indexOf(brisParts(now).weekday);const monOff=(wd+6)%7;
+  let week=0;for(let i=0;i<=monOff;i++)if(perDay[brisDate(now-i*864e5)])week++;
+  const recent=logs.filter(l=>l.n).slice(0,10);
+  const avg=recent.length?Math.round(recent.reduce((a,l)=>a+l.score/l.n,0)/recent.length*100):null;
+  const nx=nextSetFor(st,ctl);const idx=COURSE.indexOf(nx);let toRev=0;for(let j=idx;j<COURSE.length&&COURSE[j].kind!=="review";j++)toRev++;
+  const lastT=logs[0]?logs[0].t:(st.updatedAt||0);
+  const strip=[];for(let i=13;i>=0;i--){const t=now-i*864e5,p=brisParts(t),d=brisDate(t);strip.push({d,c:perDay[d]||0,day:+p.day,wd:KWD[EWD.indexOf(p.weekday)],today:i===0})}
+  return {logs,today:perDay[today]||0,week,avg,nx,toRev,lastT,strip,learnDone:LEARN.filter(s=>st.stars[s.id]!=null).length,
+    stars:totalStarsFor(st,ctl),wl:wrongListFor(st,ctl),unread:ctl.msgs.filter(m=>!st.seen.includes(m.id)).length};
+}
+function logRows(logs){
+  if(!logs.length)return '<p class="note">아직 시험 기록이 없어요. 이 버전부터 시험을 볼 때마다 기록이 쌓여요.</p>';
+  return `<div class="rows">${logs.map(l=>`<div class="rowi"><span class="score ${scoreCls(l.score,l.n)}">${l.score}/${l.n}</span><div class="ri">
+    <div><b>${esc(l.label)}</b> <span class="tag">${esc(KIND_KO[l.kind]||l.kind)}${l.kind==="day"||l.kind==="school"?(l.first?" · 첫 시도":" · 재시도"):""}</span></div>
+    <div class="note">${esc(brisTime(l.t))} · ${dur(l.ms)}</div>
+    ${(l.miss||[]).length?`<div class="rm">${l.miss.map(m=>`<b>${esc(m.w)}</b>${m.typed&&m.typed.length?` → <span class="typed">${m.typed.map(esc).join(", ")}</span>`:""}`).join(" · ")}</div>`:""}
+  </div></div>`).join("")}</div><p class="note">시간은 브리즈번 기준이에요. 빨간 글씨는 이안이가 실제로 쓴 답이에요.</p>`;
+}
+function reviewChart(list){
+  if(!list.length)return '<p class="note">아직 복습 시험 기록이 없어요. 5일 공부할 때마다 복습 시험이 생겨요.</p>';
+  const step=34,left=40,W=Math.max(320,left+12+list.length*step),H=180,top=20,bot=34,bw=22,h=H-top-bot;
+  const y=p=>top+h*(1-p);
+  let g=[0,.5,.8,1].map(p=>`<line x1="${left}" x2="${W-6}" y1="${y(p)}" y2="${y(p)}" stroke="var(--line)" stroke-width="1"${p===.8?' stroke-dasharray="4 3"':""}/><text x="${left-6}" y="${y(p)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${Math.round(p*100)}%</text>`).join("");
+  list.forEach((l,i)=>{const p=l.n?l.score/l.n:0,x=left+12+i*step,c=p>=.8?"var(--gum)":p>=.5?"var(--sun)":"var(--coral)";
+    const first=(l.label.match(/Day (\d+)/)||[0,""])[1];
+    g+=`<rect x="${x}" y="${y(p)}" width="${bw}" height="${Math.max(1,h*p)}" rx="4" fill="${c}"><title>${esc(l.label)} · ${l.score}/${l.n} · ${esc(brisTime(l.t))}</title></rect>
+    <text x="${x+bw/2}" y="${y(p)-5}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)">${l.score}</text>
+    <text x="${x+bw/2}" y="${H-bot+16}" text-anchor="middle" font-size="10" fill="var(--muted)">D${esc(first)}</text>`});
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="복습 시험 점수 추이">${g}</svg></div>
+  <p class="note">막대 위 숫자는 10문제 중 맞힌 개수, 아래는 복습 범위의 첫 Day예요. 점선은 80%(별 2개) 기준이에요.</p>`;
+}
+
+function admOverview(st,ctl){
+  const S=adminStats(st,ctl);
+  const tile=(k,v,s,cls)=>`<div class="stat ${cls||""}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s||""}</div></div>`;
+  return `<div class="stats">
+    ${tile("오늘 (브리즈번)",S.today?`✓ ${S.today}회`:"아직",S.today?"오늘 시험을 봤어요":"오늘은 아직 시험 기록이 없어요",S.today?"good":"warn")}
+    ${tile("마지막 학습",S.lastT?ago(S.lastT):"—",S.lastT?esc(brisTime(S.lastT)):"")}
+    ${tile("진도",`${S.learnDone} / ${LEARN.length}`,`다음: ${esc(dayName(S.nx))} · ${esc(S.nx.label)}`)}
+    ${tile("이번 주 학습일",`${S.week}일`,"월요일부터 (브리즈번 기준)")}
+    ${tile("최근 10회 평균",S.avg==null?"—":S.avg+"%",S.avg==null?"기록이 쌓이면 보여요":"시험 점수 기준")}
+    ${tile("다음 복습",S.nx.kind==="review"?"지금":S.toRev+"일 후","공부한 날 5일마다")}
+    ${tile("별 · 동물",`★ ${S.stars}`,`동물 ${palsOpen(S.stars)} / ${PALS.length}마리`)}
+    ${tile("오답 노트",`${S.wl.length}개`,S.unread?`안 읽은 메시지 ${S.unread}개`:"")}
+  </div>
+  <section class="panel"><h3>최근 2주</h3>
+    <div class="strip">${S.strip.map(d=>`<div title="${d.d} · ${d.c}회"><b class="${d.c?"on":""}${d.today?" today":""}">${d.day}</b><span>${d.wd}</span></div>`).join("")}</div>
+    <p class="note">초록색은 시험을 본 날이에요.</p></section>
+  <section class="panel"><h3>최근 시험</h3>${logRows(S.logs.slice(0,5))}</section>`;
+}
+function admLog(st){
+  const logs=st.log.slice().sort((a,b)=>b.t-a.t);
+  const reviews=st.log.filter(l=>l.kind==="review").sort((a,b)=>a.t-b.t).slice(-20);
+  return `<section class="panel"><h3>복습 시험 점수 추이</h3>${reviewChart(reviews)}</section>
+  <section class="panel"><h3>전체 시험 기록 <span class="note">(${logs.length}회)</span></h3>${logRows(logs.slice(0,A.more))}
+  ${logs.length>A.more?'<div class="row"><button class="btn ghost" id="more">더 보기</button></div>':""}</section>`;
+}
+function missAgg(st,ctl){
+  const agg={};
+  st.log.forEach(l=>(l.miss||[]).forEach(m=>{const k=wkey(m.sid,m.w);const a=agg[k]||(agg[k]={k,w:m.w,sid:m.sid,n:0,typed:[],last:0});a.n++;(m.typed||[]).forEach(t=>{if(!a.typed.includes(t))a.typed.push(t)});a.last=Math.max(a.last,l.t)}));
+  Object.values(st.wrong).forEach(x=>{const k=wkey(x.sid,x.w);if(!agg[k])agg[k]={k,w:x.w,sid:x.sid,n:x.n,typed:[],last:0}});
+  const inNote=new Set(wrongListFor(st,ctl).map(x=>wkey(x.sid,x.w)));
+  return Object.values(agg).map(a=>{const s=findSet(a.sid,ctl);const w=s&&s.words.find(y=>y.w===a.w);return {...a,m:w?w.m:"",from:s?dayName(s):"",inNote:inNote.has(a.k)}})
+    .sort((a,b)=>b.n-a.n||b.last-a.last);
+}
+function admMiss(st,ctl){
+  const list=missAgg(st,ctl);
+  if(!list.length)return '<section class="panel"><p class="note">아직 틀린 단어가 없어요.</p></section>';
+  return `<section class="panel"><h3>자주 틀리는 단어</h3><p class="note">처음 시도에서 틀린 횟수 순서예요. 빨간 글씨가 이안이가 실제로 쓴 답이라, 어떤 철자에서 헷갈리는지 볼 수 있어요.</p>
+  <div class="rows">${list.slice(0,40).map(a=>`<div class="rowi"><span class="score lo">${a.n}회</span><div class="ri">
+    <div><b>${esc(a.w)}</b> <span class="note">${esc((a.m||"").replace(/\s*\(호주:[^)]*\)/,""))}</span></div>
+    <div class="note">${esc(a.from)}${a.typed.length?` · 쓴 답: <span class="typed">${a.typed.map(esc).join(", ")}</span>`:""}</div></div>
+    <div class="rs">${a.inNote?'<span class="tag">오답 노트</span>':`<span class="tag ok">해결 ✓</span><button class="btn ghost sm" data-addwrong="${esc(a.k)}">다시 넣기</button>`}</div></div>`).join("")}</div></section>`;
+}
+function admMsg(st,ctl){
+  const msgs=ctl.msgs.slice().sort((a,b)=>b.t-a.t);
+  return `<section class="panel form"><h3>이안이에게 메시지 보내기</h3>
+    <textarea id="msgText" maxlength="300" placeholder="예) Great job this week, Ian! Dad is proud of you."></textarea>
+    <label class="note">보너스 별 <select id="msgBonus"><option value="0">없음</option><option>1</option><option>3</option><option>5</option><option>10</option><option>15</option></select></label>
+    <div class="row"><button class="btn" id="msgSend">보내기</button><span class="note">이안이가 다음에 앱을 열면 홈 화면 맨 위에 보여요. 보너스 별은 바로 더해져요 (15개마다 동물 1마리).</span></div></section>
+  <section class="panel"><h3>보낸 메시지</h3>${msgs.length?`<div class="list">${msgs.map(m=>`<div class="msgrow"><div style="min-width:0"><p>${esc(m.text)}</p>
+    <span class="note">${esc(brisTime(m.t))} · ${m.bonus?`+${m.bonus} ★ · `:""}${st.seen.includes(m.id)?"읽음 ✓":"아직 안 읽음"}</span></div>
+    <button class="btn ghost sm" data-delmsg="${esc(m.id)}">삭제</button></div>`).join("")}</div>
+    <p class="note">메시지를 지우면 그 메시지로 준 보너스 별도 빠져요.</p>`:'<p class="note">아직 보낸 메시지가 없어요.</p>'}</section>`;
+}
+function admPlan(st,ctl){
+  const opts=sel=>LEARN.map(s=>`<option value="${s.id}"${sel===s.id?" selected":""}>Day ${s.day} · ${esc(s.label)}${st.stars[s.id]!=null?" ✓":""}</option>`).join("");
+  const startSet=ctl.startFrom?COURSE[ctl.startFrom]:null;
+  const today=brisDate(Date.now()),revOn=ctl.reviewOnly===today;
+  const dadWrong=ctl.wrong.map(x=>{const k=wkey(x.sid,x.w),cleared=(st.cleared[k]||0)>x.at&&!st.wrong[k];return {...x,k,cleared}});
+  return `<section class="panel form"><h3>다음 학습 위치</h3>
+    <p class="note">지금: ${startSet?`<b>${esc(dayName(startSet))}</b>부터`:"처음부터 순서대로"} · 다음 학습은 <b>${esc(dayName(nextSetFor(st,ctl)))}</b>이에요. 지정한 Day부터 안 한 Day를 순서대로 진행해요.</p>
+    <select id="planStart">${opts(startSet&&startSet.id)}</select>
+    <div class="row"><button class="btn" id="planStartGo">이 Day부터 하기</button>${ctl.startFrom?'<button class="btn ghost" id="planStartClear">처음부터 순서대로</button>':""}</div></section>
+  <section class="panel form"><h3>건너뛸 Day</h3>
+    ${ctl.skip.length?`<div class="chips">${ctl.skip.map(id=>{const s=findSet(id,ctl);return `<span>${esc(s?dayName(s):id)}<button data-unskip="${esc(id)}" aria-label="건너뛰기 해제">×</button></span>`}).join("")}</div>`:'<p class="note">건너뛰는 Day가 없어요.</p>'}
+    <select id="planSkip">${opts("")}</select>
+    <div class="row"><button class="btn ghost" id="planSkipGo">건너뛰기에 추가</button></div></section>
+  <section class="panel"><h3>오늘은 복습만</h3>
+    <p class="note">${revOn?`<b>켜짐</b> · 오늘(${today}, 브리즈번) 이안이 홈 화면에 새 Day 대신 오답 노트 복습이 나와요.`:"켜면 오늘 하루(브리즈번 날짜) 동안 새 Day 대신 오답 노트 복습이 나와요. 내일은 자동으로 원래대로 돌아가요."}</p>
+    <div class="row"><button class="btn ${revOn?"ghost":"sun"}" id="revToggle">${revOn?"끄기":"오늘은 복습만 하기"}</button></div></section>
+  <section class="panel form"><h3>오답 노트에 단어 넣기</h3>
+    <input type="text" id="addWord" list="wordList" placeholder="단어를 입력하세요 (예: necessary)" autocomplete="off">
+    <datalist id="wordList">${allWords().map(w=>`<option value="${esc(w.w)}">${esc(w.m)} · Day ${w.day}</option>`).join("")}</datalist>
+    <div class="row"><button class="btn ghost" id="addWordGo">오답 노트에 넣기</button></div>
+    ${dadWrong.length?`<div class="chips">${dadWrong.map(x=>`<span>${esc(x.w)}<small>${x.cleared?"해결 ✓":"남음"}</small><button data-delwrong="${esc(x.k)}" aria-label="빼기">×</button></span>`).join("")}</div>`:""}</section>`;
+}
+function parseSchool(txt){
+  const out=[],seen=new Set();
+  txt.split("\n").forEach(line=>{const p=line.split(/\s*[|\t]\s*/).map(x=>x.trim());const w=(p[0]||"").replace(/^\d+[.)]\s*/,"");
+    if(!w||!/^[A-Za-z][A-Za-z' -]{0,40}$/.test(w)||seen.has(w.toLowerCase()))return;seen.add(w.toLowerCase());out.push({w,m:p[1]||"",ex:p.slice(2).join(" | ")||""})});
+  return out;
+}
+function admSchool(st,ctl){
+  return `<section class="panel form"><h3>학교 단어 추가</h3>
+    <input type="text" id="schTitle" maxlength="40" placeholder="제목 (예: Term 4 Week 2 spelling)">
+    <textarea id="schWords" placeholder="한 줄에 하나씩:  단어 | 뜻 | 예문&#10;because | ~때문에 | I stayed home because I was sick.&#10;friend | 친구 | My friend is kind.&#10;through"></textarea>
+    <p class="note">뜻과 예문은 없어도 돼요. 예문에 그 단어가 들어 있으면 빈칸 문제로, 없으면 뜻만 보고 쓰는 문제로 나와요. 뜻을 비우면 예문만 보고 맞혀야 하니, 뜻이나 예문 중 하나는 넣는 걸 추천해요.</p>
+    <div class="row"><button class="btn" id="schAdd">이안이에게 추가</button><span class="note" id="schCount"></span></div></section>
+  <section class="panel"><h3>추가한 학교 단어</h3>${ctl.school.length?`<div class="list">${ctl.school.slice().reverse().map(s=>`<div class="msgrow"><div style="min-width:0"><p><b>${esc(s.title)}</b> · ${s.words.length}단어 · ${st.stars[s.id]!=null?starRow(st.stars[s.id]):"아직 안 함"}</p>
+    <span class="note">${s.words.map(w=>esc(w.w)).join(", ")}</span></div><button class="btn ghost sm" data-delsch="${esc(s.id)}">삭제</button></div>`).join("")}</div>`:'<p class="note">아직 없어요.</p>'}</section>`;
+}
+const ADM_TABS=[["overview","현황"],["log","시험 기록"],["miss","오답 분석"],["msg","메시지·보너스"],["plan","학습 계획"],["school","학교 단어"]];
+function renderAdmin(){
+  const keep={};app.querySelectorAll("#adm input[id],#adm textarea[id],#adm select[id]").forEach(el=>keep[el.id]=el.value);
+  const foc=document.activeElement&&document.activeElement.id;
+  const head=`<header class="top"><div class="brand"><div style="width:48px;height:48px">${ROO}</div><div><h1>Parent dashboard</h1><small>${esc(cloud.user.email||"")}</small></div></div>
+    <div class="pills"><button class="btn ghost" id="toStudent">Student view</button><button class="btn ghost" id="admOut">로그아웃</button></div></header>`;
+  let body="";
+  if(A.err)body=`<section class="panel signin"><h3>기록을 불러오지 못했어요</h3><p class="note">${/permission-denied/.test(A.err)?"Firestore 규칙이 관리자 읽기를 막고 있어요. 새 firestore.rules를 Firebase 콘솔 → Firestore → 규칙에 붙여넣고 '게시'해 주세요.":esc(A.err)}</p><p class="note">오류 코드: <code>${esc(A.err)}</code></p><div class="row"><button class="btn" id="admRetry">다시 시도</button></div></section>`;
+  else if(A.students===null){body='<p class="note">불러오는 중…</p>';adminLoad()}
+  else if(!A.students.length)body='<section class="panel"><h3>아직 학생 기록이 없어요</h3><p class="note">이안이가 자기 Google 계정으로 앱에 로그인하고 한 번 동기화되면 여기에 나타나요.</p><div class="row"><button class="btn ghost" id="admRetry">새로고침</button></div></section>';
+  else if(!A.st||!A.ctl)body='<p class="note">이안이 기록을 불러오는 중…</p>';
+  else{
+    const st=A.st,ctl=A.ctl;
+    body=`<div class="row" style="justify-content:space-between"><h2 style="font-size:26px">${esc(studentName())}</h2>
+      ${A.students.length>1?`<select id="stuSel" aria-label="학생 선택">${A.students.map(s=>`<option value="${esc(s.uid)}"${s.uid===A.uid?" selected":""}>${esc(s.name||s.email||s.uid)}</option>`).join("")}</select>`:""}</div>
+    <div class="tabs scroll" role="tablist">${ADM_TABS.map(([k,l])=>`<button role="tab" aria-selected="${A.tab===k}" data-atab="${k}">${l}</button>`).join("")}</div>
+    ${{overview:admOverview,log:admLog,miss:admMiss,msg:admMsg,plan:admPlan,school:admSchool}[A.tab](st,ctl)}`;
+  }
+  app.innerHTML=head+`<div id="adm" class="adm">${body}</div>`;
+  Object.entries(keep).forEach(([id,v])=>{const el=document.getElementById(id);if(el&&id!=="stuSel"&&v!=="")el.value=v});
+  if(foc){const el=document.getElementById(foc);if(el&&/INPUT|TEXTAREA/.test(el.tagName))el.focus({preventScroll:true})}
+  bindAdmin();
+}
+function bindAdmin(){
+  const on=(sel,fn)=>{const el=$(sel);if(el)el.onclick=fn};
+  on("#toStudent",()=>{view="home";render();scrollTo(0,0)});
+  on("#admOut",()=>cloud.signOut());
+  on("#admRetry",()=>{adminReset();renderAdmin()});
+  const ss=$("#stuSel");if(ss)ss.onchange=()=>adminWatch(ss.value);
+  app.querySelectorAll("[data-atab]").forEach(b=>b.onclick=()=>{A.tab=b.dataset.atab;renderAdmin()});
+  on("#more",()=>{A.more+=30;renderAdmin()});
+  app.querySelectorAll("[data-addwrong]").forEach(b=>b.onclick=()=>{const k=b.dataset.addwrong,i=k.indexOf(":");
+    saveCtl(c=>{c.wrong=c.wrong.filter(x=>wkey(x.sid,x.w)!==k);c.wrong.push({sid:k.slice(0,i),w:k.slice(i+1),at:Date.now()})},"오답 노트에 다시 넣었어요")});
+  on("#msgSend",()=>{const t=$("#msgText").value.trim(),b=+$("#msgBonus").value||0;if(!t&&!b){toast("메시지를 입력해 주세요");return}
+    $("#msgText").value="";saveCtl(c=>c.msgs.push({id:"m"+Date.now(),t:Date.now(),text:t||"Bonus stars from Dad!",bonus:b}),"메시지를 보냈어요")});
+  app.querySelectorAll("[data-delmsg]").forEach(b=>b.onclick=()=>saveCtl(c=>c.msgs=c.msgs.filter(m=>m.id!==b.dataset.delmsg),"삭제했어요"));
+  on("#planStartGo",()=>{const id=$("#planStart").value;saveCtl(c=>c.startFrom=COURSE.findIndex(s=>s.id===id),"다음 학습 위치를 바꿨어요")});
+  on("#planStartClear",()=>saveCtl(c=>c.startFrom=0,"처음부터 순서대로 진행해요"));
+  on("#planSkipGo",()=>{const id=$("#planSkip").value;saveCtl(c=>{if(!c.skip.includes(id))c.skip.push(id)},"건너뛰기에 추가했어요")});
+  app.querySelectorAll("[data-unskip]").forEach(b=>b.onclick=()=>saveCtl(c=>c.skip=c.skip.filter(x=>x!==b.dataset.unskip),"건너뛰기를 풀었어요"));
+  on("#revToggle",()=>{const today=brisDate(Date.now());saveCtl(c=>c.reviewOnly=c.reviewOnly===today?"":today,"저장했어요")});
+  on("#addWordGo",()=>{const v=$("#addWord").value.trim().toLowerCase();const w=allWords().find(x=>x.w.toLowerCase()===v);
+    if(!w){toast("단어장에 없는 단어예요. 학교 단어 탭에서 추가해 주세요");return}
+    $("#addWord").value="";saveCtl(c=>{c.wrong=c.wrong.filter(x=>wkey(x.sid,x.w)!==wkey(w.sid,w.w));c.wrong.push({sid:w.sid,w:w.w,at:Date.now()})},`'${w.w}'을(를) 오답 노트에 넣었어요`)});
+  app.querySelectorAll("[data-delwrong]").forEach(b=>b.onclick=()=>saveCtl(c=>c.wrong=c.wrong.filter(x=>wkey(x.sid,x.w)!==b.dataset.delwrong),"뺐어요"));
+  const sw=$("#schWords");if(sw){const upd=()=>{const n=parseSchool(sw.value).length;$("#schCount").textContent=n?`${n}단어`:""};sw.oninput=upd;upd()}
+  on("#schAdd",()=>{const words=parseSchool($("#schWords").value),title=$("#schTitle").value.trim()||"School words "+brisDate(Date.now());
+    if(!words.length){toast("단어를 한 줄에 하나씩 입력해 주세요");return}
+    $("#schWords").value="";$("#schTitle").value="";saveCtl(c=>c.school.push({id:"s"+Date.now(),title,at:Date.now(),words}),`${words.length}단어를 추가했어요`)});
+  app.querySelectorAll("[data-delsch]").forEach(b=>b.onclick=()=>saveCtl(c=>c.school=c.school.filter(s=>s.id!==b.dataset.delsch),"삭제했어요"));
 }
 
 try{loadVoices()}catch(e){}
