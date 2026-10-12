@@ -2,7 +2,7 @@
 // 이 파일은 한 번만 채우면 돼요. 앞으로 index.html만 바꿔 올려도 설정이 유지돼요.
 var FIREBASE_CONFIG = {
   apiKey: "AIzaSyAEF-7ELO76cQBBnbXqpmG9Hc4vxRo8juA",
-  authDomain: "ian-voca.firebaseapp.com",
-  projectId: "ian-voca",
+  authDomain: "ian-voca-85951.firebaseapp.com",
+  projectId: "ian-voca-85951",
   appId: "1:513167044992:web:4578cc34668fa46f319165"
 };
