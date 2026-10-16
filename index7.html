@@ -1,0 +1,2809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-title" content="Word Hop">
+<meta name="theme-color" content="#24876a">
+<title>Ian's Word Hop</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A6%98%3C/text%3E%3C/svg%3E">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Andika:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: one column "trail" — today's day up top, then zoo / streak / tricky words, then the day path; one big card per word in learn and test */
+:root{
+  --bg:#eef6f9; --card:#ffffff; --ink:#16324a; --muted:#587086; --line:#d4e2eb;
+  --gum:#24876a; --gum-soft:#dcf1e8; --ocean:#1d6fc2; --ocean-soft:#dcebfa;
+  --sun:#f6b41e; --sun-soft:#fff2cc; --coral:#d9483d; --coral-soft:#fde3e0;
+  --display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --read:"Andika","Atkinson Hyperlegible",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1b26; --card:#162736; --ink:#e7f0f6; --muted:#9bb0c1; --line:#2a3f51;
+  --gum:#4cc193; --gum-soft:#173b30; --ocean:#62a9f2; --ocean-soft:#16304a;
+  --sun:#ffcd55; --sun-soft:#3a3016; --coral:#ff7d70; --coral-soft:#43221f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1b26; --card:#162736; --ink:#e7f0f6; --muted:#9bb0c1; --line:#2a3f51;
+  --gum:#4cc193; --gum-soft:#173b30; --ocean:#62a9f2; --ocean-soft:#16304a;
+  --sun:#ffcd55; --sun-soft:#3a3016; --coral:#ff7d70; --coral-soft:#43221f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:780px;margin:0 auto;padding:20px 16px 48px;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--display);line-height:1.1;margin:0;text-wrap:balance}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--ocean);outline-offset:2px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.brand h1{font-size:30px;color:var(--gum)}
+.brand small{display:block;font-family:var(--body);color:var(--muted);font-size:14px;font-weight:400}
+.pills{display:flex;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--sun-soft);color:var(--ink);border-radius:999px;padding:6px 14px;font-weight:700;font-variant-numeric:tabular-nums}
+.pill.cloud{background:var(--ocean-soft);font-weight:400;font-size:14px}
+.panel.signin{border-color:var(--ocean)}
+.btn{border:0;border-radius:14px;padding:12px 18px;font-weight:700;background:var(--ocean);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px}
+.btn.green{background:var(--gum)}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.btn.sun{background:var(--sun);color:#1c1606}
+.btn.big{font-size:20px;padding:14px 26px}
+.btn:disabled{opacity:.45;cursor:default}
+.icon-btn{border:2px solid var(--line);background:var(--card);border-radius:12px;width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.icon-btn svg{width:22px;height:22px}
+.note{font-size:14px;color:var(--muted);margin:0}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.panel{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.panel h3{font-size:20px}
+
+/* today */
+.today{background:var(--card);border:3px solid var(--gum);border-radius:24px;padding:18px;display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+.today .eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--gum);font-weight:700}
+.today h2{font-size:32px}
+.today p{margin:2px 0 8px;color:var(--muted)}
+.bar{height:10px;border-radius:99px;background:var(--gum-soft);overflow:hidden;margin:6px 0 10px}
+.bar i{display:block;height:100%;background:var(--gum);border-radius:99px}
+.cards3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+
+/* zoo preview + calendar */
+.zoo-strip{display:flex;gap:6px;flex-wrap:wrap;font-size:30px;line-height:1}
+.zoo-strip .lock{opacity:.25;filter:grayscale(1)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:12px;font-variant-numeric:tabular-nums}
+.cal b{color:var(--muted);font-weight:700}
+.cal span{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--muted)}
+.cal span.on{background:var(--gum);color:#fff;font-weight:700}
+.cal span.today{outline:2px solid var(--sun)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips span{background:var(--coral-soft);border-radius:999px;padding:2px 10px;font-weight:700;font-size:15px}
+.chips span small{color:var(--muted);font-weight:400;margin-left:4px}
+
+/* day path */
+details.level{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:4px 16px}
+details.level summary{cursor:pointer;padding:12px 0;font-family:var(--display);font-size:22px;list-style:none;display:flex;justify-content:space-between;gap:8px;align-items:center}
+details.level summary::-webkit-details-marker{display:none}
+details.level summary span{font-family:var(--body);font-size:14px;color:var(--muted)}
+.days{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;padding-bottom:14px}
+.day{background:var(--bg);border:2px solid var(--line);border-radius:14px;padding:8px 8px 6px;text-align:left;display:flex;flex-direction:column;gap:0;min-height:86px}
+.day:hover{border-color:var(--ocean)}
+.day .n{font-family:var(--display);font-size:19px;color:var(--ocean);line-height:1.1}
+.day .t{font-size:12px;color:var(--muted);line-height:1.25;flex:1}
+.day.plan{background:var(--sun-soft)}
+.day.review{background:var(--coral-soft);border-style:dashed}
+.day.review .n{color:var(--coral)}
+.day.done{border-color:var(--gum);background:var(--gum-soft)}
+.day.next{border-color:var(--sun);box-shadow:0 0 0 3px var(--sun-soft)}
+.stars{display:flex;gap:1px}
+.stars svg{width:16px;height:16px}
+.settings label{font-size:14px;color:var(--muted);display:grid;gap:4px}
+.settings select,.settings input[type=range]{width:100%;font:inherit}
+.settings select{padding:8px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
+details.settings summary{cursor:pointer;font-family:var(--display);font-size:20px}
+
+/* learn */
+.tabs{display:flex;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:4px;gap:4px}
+.tabs button{flex:1;border:0;background:transparent;border-radius:12px;padding:10px;font-weight:700;min-height:44px}
+.tabs button[aria-selected="true"]{background:var(--ocean);color:#fff}
+.list{display:grid;gap:12px}
+.wcard{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:14px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:start}
+.wcard.playing{border-color:var(--sun);box-shadow:0 0 0 4px var(--sun-soft)}
+.wcard .w{font-family:var(--display);font-size:28px;color:var(--gum);line-height:1}
+.wcard .m{font-weight:700}
+.wcard .ex{grid-column:1/-1;font-family:var(--read);font-size:19px;margin:0;min-width:0}
+.wcard .ex b{color:var(--ocean)}
+
+/* test */
+.track{position:relative;height:74px;background:var(--card);border:2px solid var(--line);border-radius:18px;overflow:hidden}
+.track .ground{position:absolute;left:0;right:0;bottom:0;height:16px;background:var(--gum-soft)}
+.track .flag{position:absolute;right:12px;bottom:14px;width:26px;height:40px}
+.roo{position:absolute;bottom:12px;left:8px;width:52px;height:52px;transition:left .5s cubic-bezier(.3,1.4,.6,1)}
+.roo.hop svg{animation:hop .5s ease}
+@keyframes hop{0%,100%{transform:translateY(0)}45%{transform:translateY(-26px) rotate(-8deg)}}
+.qcard{background:var(--card);border:2px solid var(--line);border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.qmeta{display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--muted);font-size:15px;font-variant-numeric:tabular-nums;flex-wrap:wrap}
+.meaning{font-size:15px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.meaning strong{display:block;font-family:var(--display);font-size:32px;color:var(--ink);letter-spacing:0;text-transform:none;line-height:1.15;margin-top:2px}
+.sentence{font-family:var(--read);font-size:24px;line-height:1.5;margin:0;background:var(--bg);border-radius:14px;padding:14px 16px}
+.blank{display:inline-block;min-width:4ch;border-bottom:3px solid var(--ocean);color:var(--ocean);font-weight:700;padding:0 4px;text-align:center}
+.blank.ok{color:var(--gum);border-color:var(--gum)}
+.blank.bad{color:var(--coral);border-color:var(--coral)}
+.answer{display:flex;gap:10px;flex-wrap:wrap}
+.answer input{flex:1 1 200px;min-width:0;font-family:var(--read);font-size:24px;padding:10px 14px;border-radius:14px;border:3px solid var(--line);background:var(--bg);color:var(--ink)}
+.answer input.ok{border-color:var(--gum);background:var(--gum-soft)}
+.answer input.bad{border-color:var(--coral);background:var(--coral-soft)}
+.feedback{min-height:28px;font-weight:700;margin:0}
+.feedback.ok{color:var(--gum)} .feedback.bad{color:var(--coral)}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}}
+.streak{color:var(--coral);font-weight:800}
+.result{background:var(--card);border:2px solid var(--line);border-radius:22px;padding:24px 20px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center}
+.result .big{font-family:var(--display);font-size:56px;color:var(--gum);line-height:1;font-variant-numeric:tabular-nums}
+.result .stars svg{width:44px;height:44px}
+.miss{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.miss span{background:var(--coral-soft);color:var(--ink);border-radius:999px;padding:4px 12px;font-weight:700}
+.newpal{background:var(--sun-soft);border:3px dashed var(--sun);border-radius:20px;padding:14px 18px;display:flex;gap:14px;align-items:center;text-align:left;max-width:460px}
+.newpal .e{font-size:56px;line-height:1}
+.newpal .k{font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--coral)}
+
+/* zoo page */
+.zoo{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.pal{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:4px;align-items:center;text-align:center}
+.pal .e{font-size:52px;line-height:1.1}
+.pal h4{margin:0;font-family:var(--display);font-size:18px;line-height:1.1}
+.pal p{margin:0;font-size:13px;color:var(--muted);line-height:1.35}
+.pal.locked .e{filter:grayscale(1) brightness(0);opacity:.18}
+.pal.locked h4{color:var(--muted)}
+.tabs.scroll{overflow-x:auto;scrollbar-width:none}
+.tabs button.locked{color:var(--muted)}
+.tabs button{white-space:nowrap}
+.tabs.four button{flex:1 1 0;min-width:0;padding:10px 2px;font-size:14px;overflow:hidden;text-overflow:ellipsis}
+.tabs{min-width:0;overflow:hidden}
+.lscwc{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;counter-reset:s}
+.lscwc li{text-align:center;font-size:13px;font-weight:700;color:var(--muted);background:var(--bg);border-radius:999px;padding:4px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lscwc li.done{color:var(--gum);background:var(--gum-soft)}
+.lscwc li.on{color:#fff;background:var(--ocean)}
+.wbig{font-family:var(--read);font-size:52px;line-height:1.15;text-align:center;letter-spacing:.02em;white-space:nowrap;overflow:hidden;padding:8px 0}
+.wbig.ok{color:var(--gum)}
+.wbig .l-ok{color:var(--gum)}
+.wbig .l-bad{color:var(--coral);text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:6px}
+.wtyped{font-family:var(--read);font-size:30px;text-align:center;color:var(--muted);text-decoration:line-through;overflow-wrap:anywhere}
+.wmean{margin:0;text-align:center;font-weight:700;font-size:20px}
+.wsent{text-align:center;font-family:var(--read);font-size:17px}
+.wcover{display:flex;align-items:center;justify-content:center;gap:10px;height:86px;border-radius:16px;background:repeating-linear-gradient(45deg,var(--sun-soft),var(--sun-soft) 12px,var(--card) 12px,var(--card) 24px);border:2px dashed var(--sun);font-weight:700;font-size:20px}
+.writebox{width:100%;min-height:96px;font-family:var(--read);font-size:44px;text-align:center;border-radius:18px;border:3px dashed var(--ocean);background:var(--card);color:var(--ink);padding:8px 12px;background-image:linear-gradient(transparent 70%,var(--ocean-soft) 70%,var(--ocean-soft) 72%,transparent 72%)}
+.writebox:focus{border-style:solid;outline:none}
+.writebox::placeholder{font-family:var(--body);font-size:18px;color:var(--muted)}
+.tag.wr{color:var(--coral);border-color:var(--coral)}
+.wcard.heard{border-color:var(--gum)}
+.wcard.heard .w::after{content:"✓";margin-left:8px;font-size:18px;vertical-align:middle;color:#fff;background:var(--gum);border-radius:99px;padding:0 7px}
+.btn:disabled{cursor:not-allowed}
+.match{border-color:var(--sun)}
+.match.done{border-color:var(--gum);background:var(--gum-soft)}
+.match.locked{border-style:dashed}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mcol{display:flex;flex-direction:column;gap:8px;min-width:0}
+.mt{min-height:52px;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:8px 10px;text-align:center;overflow-wrap:anywhere;line-height:1.25}
+.mt.mw{font-family:var(--read);font-size:20px;font-weight:700}
+.mt.mm{font-size:15px}
+.mt.sel{border-color:var(--ocean);background:var(--ocean-soft);box-shadow:0 0 0 3px var(--ocean-soft)}
+.mt.ok{border-color:var(--gum);background:var(--gum-soft);color:var(--gum);opacity:.6}
+.mt.bad{border-color:var(--coral);background:var(--coral-soft);animation:shake .35s}
+.learnbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.learnbar .btn,.spbtns .btn{flex:none;white-space:nowrap}
+.learnbar .btn svg,.spbtns .btn svg{width:22px;height:22px;flex:none}
+.learnbar .note{flex:1 1 180px;min-width:0}
+.spbtns{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.spbtns .mic{flex:1 1 220px}
+.mic.listening{background:var(--coral);animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 var(--coral-soft)}50%{box-shadow:0 0 0 10px var(--coral-soft)}}
+.sdots{display:grid;gap:4px}
+.sdots i{display:block;height:8px;border-radius:99px;background:var(--line)}
+.sdots i.on{background:var(--gum)}
+.sdots i.cur{background:var(--sun)}
+.sentence .w-hit{color:var(--gum);font-weight:700}
+.sentence .w-miss{color:var(--coral);text-decoration:underline wavy;text-underline-offset:4px}
+.heard{margin:0;font-family:var(--read);color:var(--muted);min-height:1.4em;overflow-wrap:anywhere}
+.miss span.okchip{background:var(--gum-soft)}
+.tag.spk{color:var(--ocean);border-color:var(--ocean)}
+.tabs.scroll button{flex:1 0 auto;white-space:nowrap;padding:10px 14px}
+.adm{display:flex;flex-direction:column;gap:16px;min-width:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.stat{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:12px 14px;min-width:0}
+.stat .k{font-size:13px;color:var(--muted);font-weight:700}
+.stat .v{font-family:var(--display);font-size:26px;line-height:1.2;font-variant-numeric:tabular-nums}
+.stat .s{font-size:13px;color:var(--muted);line-height:1.35;overflow-wrap:anywhere}
+.stat.good{border-color:var(--gum);background:var(--gum-soft)}
+.stat.warn{border-color:var(--coral)}
+.strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px 4px;text-align:center;font-size:11px;color:var(--muted)}
+.strip div{display:flex;flex-direction:column;gap:2px;align-items:center;min-width:0}
+.strip b{width:100%;max-width:40px;aspect-ratio:1;border-radius:8px;background:var(--bg);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.strip b.on{background:var(--gum);border-color:var(--gum);color:#fff}
+.strip b.today{outline:2px solid var(--sun);outline-offset:1px}
+.rows{border:2px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden}
+.rowi{display:flex;gap:12px;padding:10px 12px;border-bottom:1px solid var(--line);align-items:flex-start}
+.rowi:last-child{border-bottom:0}
+.rowi>.score{flex:none;min-width:58px;text-align:center;margin-top:1px}
+.ri{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
+.rm{font-size:14px;overflow-wrap:anywhere}
+.rs{flex:none;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.tag{display:inline-block;font-size:12px;color:var(--muted);font-weight:700;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:0 8px;white-space:nowrap}
+.tag.ok{color:var(--gum);border-color:var(--gum)}
+.tbl{overflow-x:auto;border:2px solid var(--line);border-radius:16px;background:var(--card)}
+.tbl table{border-collapse:collapse;width:100%;font-size:15px;min-width:620px}
+.tbl th,.tbl td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl th{font-size:13px;color:var(--muted);background:var(--bg);white-space:nowrap}
+.tbl td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.score{display:inline-block;border-radius:999px;padding:1px 10px;font-weight:700;font-variant-numeric:tabular-nums}
+.score.hi{background:var(--gum-soft)} .score.mid{background:var(--sun-soft)} .score.lo{background:var(--coral-soft)}
+.typed{color:var(--coral);font-family:var(--read)}
+.form textarea,.form input[type=text],.form select,#stuSel{width:100%;font:inherit;padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
+#stuSel{width:auto}
+.form label select{width:auto;margin-left:6px;padding:6px 10px}
+.form textarea{min-height:120px;font-family:var(--read);resize:vertical}
+.chips span{display:inline-flex;align-items:center;gap:4px}
+.chips button{border:0;background:none;color:var(--muted);padding:0 2px;font-weight:700;font-size:16px;line-height:1}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:14px;border-radius:10px}
+.msgrow{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;border:2px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--bg)}
+.msgrow p{margin:0 0 4px;white-space:pre-wrap;overflow-wrap:anywhere}
+.dadmsg{background:var(--sun-soft);border:3px solid var(--sun);border-radius:22px;padding:16px 18px;display:flex;gap:14px;align-items:flex-start}
+.dadmsg .e{font-size:44px;line-height:1}
+.dadmsg .k{font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--coral)}
+.dadmsg p{margin:4px 0 10px;font-size:20px;font-family:var(--read);white-space:pre-wrap;overflow-wrap:anywhere}
+.dadmsg .bonus{font-weight:700;font-size:17px}
+.day.school{background:var(--ocean-soft)}
+.chart{overflow-x:auto}
+.chart svg{width:100%;min-width:300px;height:auto;display:block}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:700;z-index:60;max-width:calc(100% - 32px);text-align:center}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
+@media (max-width:480px){.wcard .w{font-size:24px}.sentence{font-size:20px}.answer input{font-size:20px}.meaning strong{font-size:26px}.brand h1{font-size:26px}.today{grid-template-columns:1fr}.today .roo-big{display:none}.today h2{font-size:28px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="wrap" id="app"></div>
+
+<script>
+const PLAN=[
+["Feelings","감정",[["proud","자랑스러운","I am proud of my drawing."],["nervous","긴장한, 떨리는","I feel nervous before a test."],["curious","궁금한, 호기심 많은","The cat is curious about the box."],["embarrassed","창피한","I was embarrassed when I fell over."],["grateful","고마워하는","I am grateful for my friends."],["jealous","질투하는","He was jealous of my new bike."],["confident","자신 있는","She is confident when she reads aloud."],["disappointed","실망한","I was disappointed when it rained."],["relieved","안심한","I was relieved to find my hat."],["furious","몹시 화난","Dad was furious about the broken window."]]],
+["School","학교 공부",[["explain","설명하다","Can you explain the game to me?"],["describe","묘사하다","Describe your best friend."],["compare","비교하다","Compare the two pictures."],["solve","(문제를) 풀다","I can solve this maths problem."],["practise","연습하다","I practise piano every day."],["discuss","의논하다","We discuss the story in class."],["choose","고르다","Choose one book to read."],["improve","나아지다, 향상시키다","My spelling will improve."],["complete","끝내다, 완성하다","Please complete your homework."],["mistake","실수","It's okay to make a mistake."]]],
+["Describing","모양·느낌",[["enormous","거대한","An elephant is enormous."],["tiny","아주 작은","The ant is tiny."],["ancient","아주 오래된, 고대의","We saw an ancient castle."],["fragile","깨지기 쉬운","Be careful, the glass is fragile."],["smooth","매끄러운","The stone feels smooth."],["rough","거친","The tree bark is rough."],["gentle","부드러운, 온화한","Be gentle with the puppy."],["fierce","사나운","The lion looks fierce."],["dull","지루한; 흐릿한","The movie was dull."],["sparkling","반짝이는","The sea was sparkling in the sun."]]],
+["Actions","움직임",[["wander","돌아다니다, 거닐다","We wander around the park."],["rush","서두르다","Don't rush your breakfast."],["crawl","기어가다","The baby can crawl."],["leap","뛰어오르다","The frog can leap high."],["stumble","발이 걸려 비틀거리다","I stumble on a rock."],["whisper","속삭이다","She whispers a secret."],["grab","움켜잡다","Grab your bag, let's go!"],["toss","(가볍게) 던지다","Toss the ball to me."],["chase","뒤쫓다","The dog likes to chase birds."],["pause","잠시 멈추다","Pause the video, please."]]],
+["Nature","자연·호주",[["environment","환경","We must look after the environment."],["creature","생물, 동물","A koala is a cute creature."],["habitat","서식지","The forest is the koala's habitat."],["coast","해안","We drove along the coast."],["drought","가뭄","There was no rain during the drought."],["flood","홍수","The river flooded after the storm."],["shelter","피난처, 쉼터","We found shelter from the rain."],["native","토종의, 원산의","Kangaroos are native to Australia."],["rainforest","열대우림","Many birds live in the rainforest."],["reef","암초, 산호초","Fish swim around the reef."]]],
+["Time words","시간·순서",[["suddenly","갑자기","Suddenly, the lights went out."],["finally","마침내","Finally, the bus came."],["eventually","결국, 나중에는","Eventually, I found my shoe."],["meanwhile","그동안에","Meanwhile, Mum cooked dinner."],["recently","최근에","I recently started swimming lessons."],["immediately","즉시","Come here immediately!"],["usually","보통, 대개","I usually walk to school."],["rarely","거의 ~않는","It rarely snows in Brisbane."],["already","이미, 벌써","I have already eaten lunch."],["instead","대신에","Let's play inside instead."]]],
+["Character","성격",[["honest","정직한","Always be honest with your teacher."],["polite","예의 바른","It is polite to say thank you."],["patient","참을성 있는","Be patient and wait your turn."],["brave","용감한","The brave boy helped his friend."],["generous","너그러운, 잘 나눠주는","She is generous and shares her snacks."],["selfish","이기적인","Don't be selfish with the toys."],["clever","영리한","The fox was very clever."],["lazy","게으른","The lazy cat sleeps all day."],["responsible","책임감 있는","I am responsible for feeding the fish."],["stubborn","고집 센","My little cousin is so stubborn."]]],
+["Science","과학",[["experiment","실험","We did an experiment with water."],["observe","관찰하다","Observe the plant every day."],["predict","예측하다","Can you predict what will happen?"],["measure","재다, 측정하다","Measure the table with a ruler."],["material","재료, 물질","Wood is a strong material."],["liquid","액체","Milk is a liquid."],["solid","고체; 단단한","Ice is a solid."],["temperature","온도","The temperature is hot today."],["energy","에너지, 기운","Food gives us energy."],["result","결과","The result of the test was good."]]],
+["Talking","말하기",[["suggest","제안하다","I suggest we go to the beach."],["agree","동의하다","I agree with you."],["argue","말다툼하다","My brother and I argue about the TV."],["apologise","사과하다","I apologise for being late."],["admit","인정하다","He admitted he broke the cup."],["complain","불평하다","Don't complain about your dinner."],["reply","대답하다","Please reply to my message."],["mention","언급하다, 말하다","She mentioned her new puppy."],["warn","경고하다","Mum warned me about the hot pan."],["promise","약속하다","I promise to clean my room."]]],
+["Story words","이야기",[["adventure","모험","We went on an adventure in the bush."],["journey","여행, 여정","The journey to Korea is long."],["character","등장인물","Who is your favourite character?"],["mystery","수수께끼, 미스터리","The missing cookie is a mystery."],["treasure","보물","The pirates found treasure."],["discover","발견하다","We discovered a secret path."],["escape","탈출하다","The bird escaped from its cage."],["rescue","구조하다","The firefighter rescued the cat."],["villain","악당","The villain stole the gold."],["clue","단서","The detective found a clue."]]],
+["Thinking","생각하기",[["imagine","상상하다","Imagine you can fly."],["decide","결정하다","I can't decide which ice cream to get."],["wonder","궁금해하다","I wonder why the sky is blue."],["realise","깨닫다","I realised I forgot my lunch."],["notice","알아차리다","Did you notice my new haircut?"],["recognise","알아보다","I recognise that song."],["expect","기대하다, 예상하다","I expect it will be sunny tomorrow."],["consider","곰곰이 생각하다","Consider your answer carefully."],["prefer","더 좋아하다","I prefer apples to bananas."],["believe","믿다","I believe in you."]]],
+["Amounts","양·수",[["several","몇몇의","I have several pencils."],["entire","전체의","I ate the entire pizza!"],["plenty","많음, 충분함","We have plenty of time."],["extra","추가의, 여분의","Bring an extra jumper."],["double","두 배; 두 배로 하다","Double 4 is 8."],["total","합계, 총","The total is 20 dollars."],["average","평균; 보통의","He is of average height."],["amount","양","Use a small amount of glue."],["increase","늘다, 증가하다","The number of students increased."],["decrease","줄다, 감소하다","The noise decreased at night."]]],
+["Daily life","집·생활",[["chore","집안일","My chore is to set the table."],["tidy","깔끔한; 정리하다","Please tidy your room."],["prepare","준비하다","We prepare for the camping trip."],["borrow","빌리다","Can I borrow your eraser?"],["lend","빌려주다","I will lend you my book."],["repair","고치다","Dad repaired my bike."],["recipe","요리법","This is Grandma's cake recipe."],["ingredient","재료","Eggs are an ingredient in pancakes."],["appointment","약속, 예약","I have a dentist appointment today."],["neighbour","이웃","Our neighbour has a big dog."]]],
+["Sport","운동·경기",[["compete","경쟁하다, 시합하다","We compete in the swimming carnival."],["opponent","상대 선수","My opponent was very fast."],["champion","우승자","She is the chess champion."],["referee","심판","The referee blew the whistle."],["cheer","응원하다","We cheer for our team."],["defeat","이기다, 패배시키다","Our team defeated the Tigers."],["effort","노력","You tried hard. Great effort!"],["fair","공평한","That's not fair!"],["attempt","시도; 시도하다","He made an attempt to score a goal."],["victory","승리","We celebrated our victory."]]],
+["Useful words","자주 쓰는 형용사",[["important","중요한","Sleep is important for kids."],["possible","가능한","Is it possible to finish today?"],["necessary","필요한","A hat is necessary at the beach."],["dangerous","위험한","Swimming alone is dangerous."],["familiar","익숙한, 낯익은","That face looks familiar."],["strange","이상한","I heard a strange noise."],["ordinary","평범한","It was an ordinary Monday."],["popular","인기 있는","Soccer is popular at my school."],["private","개인적인, 사적인","My diary is private."],["comfortable","편안한","This chair is comfortable."]]]
+];
+const L1_TEXT=`## 1
+adult|어른|Kids must come with an adult.
+gun|총|The toy gun makes a funny sound.
+helpful|도움이 되는|Thank you, you are very helpful.
+nighttime|밤, 야간|Owls hunt at nighttime.
+base|바닥, 받침; 기지|The base of the lamp is heavy.
+turkey|칠면조|We eat turkey at Christmas.
+stuff|물건, 것들|Put your stuff in your bag.
+swallow|삼키다|Swallow your food before you talk.
+curl|곱슬곱슬해지다; 곱슬머리|Her hair curls in the rain.
+afraid|무서워하는|I am afraid of spiders.
+hall|복도; 홀|Walk quietly in the hall.
+suit|정장|Dad wears a suit to work.
+proud|자랑스러운|Mum is proud of me.
+hum|콧노래를 부르다|I hum a song in the bath.
+battery|건전지|The remote needs a new battery.
+tray|쟁반|She carried the cups on a tray.
+borrow|빌리다|Can I borrow your pencil?
+tap|톡톡 두드리다; 수도꼭지|Tap me on the shoulder.
+glad|기쁜|I am glad you came.
+empty|비어 있는|The box is empty.
+vendor|노점상, 판매인|The ice cream vendor is at the beach.
+knight|기사|The knight rode a white horse.
+jar|병, 단지|There is honey in the jar.
+traffic|교통(량)|There is a lot of traffic today.
+sore|아픈, 쓰린|I have a sore throat.
+## 2
+brain|뇌|Your brain helps you think.
+calendar|달력|Mark your birthday on the calendar.
+clown|광대|The clown has a red nose.
+tag|꼬리표; 술래잡기|We played tag at lunch.
+vinegar|식초|Vinegar tastes sour.
+handle|손잡이|Hold the cup by the handle.
+realistic|실제 같은, 현실적인|This toy dinosaur looks realistic.
+switch|스위치; 바꾸다|Turn off the light switch.
+chilly|쌀쌀한|It is chilly this morning.
+invitation|초대(장)|I got an invitation to a party.
+fail|실패하다|Don't worry if you fail at first.
+coupon|쿠폰, 할인권|Mum used a coupon at the shop.
+bottom|맨 아래, 바닥|The coin is at the bottom of the pool.
+toss|(가볍게) 던지다|Toss the ball to me.
+twist|비틀다, 돌리다|Twist the lid to open the jar.
+vine|덩굴|Grapes grow on a vine.
+poke|쿡 찌르다|Don't poke your brother.
+calm|침착한, 차분한|Stay calm and take a deep breath.
+ostrich|타조|An ostrich can run very fast.
+ugly|못생긴|The ugly duckling became a swan.
+rug|깔개, 러그|The cat sleeps on the rug.
+cold|감기; 추운|I have a cold, so I stay home.
+waterfall|폭포|We swam under the waterfall.
+throat|목구멍|My throat hurts.
+error|오류, 실수|There is an error in my sum.
+## 3
+height|키, 높이|What is your height?
+volcano|화산|The volcano is smoking.
+health|건강|Fruit is good for your health.
+end|끝|I like the end of the story.
+church|교회|We sing songs at church.
+package|소포|A package came for you.
+form|서식, 양식; 형태|Please fill in this form.
+donkey|당나귀|The donkey carries the bags.
+final|마지막의; 결승전|This is the final question.
+pyramid|피라미드|We saw a pyramid in Egypt.
+drool|침을 흘리다|The dog drools when it sees food.
+case|상자, 케이스|Put your glasses in the case.
+tool|도구|A hammer is a useful tool.
+bury|묻다|The dog likes to bury bones.
+watercolor|수채화 (호주: watercolour)|I painted a watercolor of the sea.|watercolour
+heat|열기, 더위|The heat of the sun is strong today.
+herb|허브|Mint is a herb.
+tight|꽉 끼는|My old shoes are too tight.
+wizard|마법사|The wizard waved his wand.
+wheelchair|휠체어|My grandpa uses a wheelchair.
+introduce|소개하다|Let me introduce my friend Sam.
+pair|한 쌍, 켤레|I need a new pair of socks.
+wish|소원; 바라다|Make a wish and blow out the candles.
+interview|면접, 인터뷰|Dad has a job interview today.
+partner|짝, 파트너|Find a partner for the game.
+## 4
+call|부르다; 전화하다|Call me when you get home.
+space|우주; 공간|Astronauts travel into space.
+look|보다|Look at that rainbow!
+iron|다리미; 철|Mum uses an iron on my shirt.
+jail|감옥|The thief went to jail.
+popular|인기 있는|This game is very popular.
+waste|낭비하다; 쓰레기|Don't waste water.
+comedy|코미디, 희극|We watched a funny comedy.
+knit|뜨개질하다|Grandma knits me a scarf.
+pit|구덩이; (복숭아 등의) 씨|The peach has a big pit.
+treasure|보물|The map shows where the treasure is.
+wonder|궁금해하다|I wonder what is in the box.
+pure|순수한, 깨끗한|The water in the river is pure.
+grocery|식료품(점)|We buy milk at the grocery store.
+kind|친절한; 종류|Be kind to your friends.
+lead|이끌다|The teacher will lead us to the hall.
+ill|아픈|I was ill and stayed in bed.
+novel|소설|My sister is reading a long novel.
+print|인쇄하다|Please print my homework.
+breath|숨, 호흡|Take a deep breath.
+fuel|연료|Cars need fuel to go.
+always|항상|I always brush my teeth at night.
+advice|조언, 충고|Thanks for your good advice.
+subtract|빼다|Subtract 3 from 10.
+relax|쉬다, 긴장을 풀다|We relax at the beach.
+## 5
+place|장소|This is my favourite place.
+actor|배우|The actor waved to the crowd.
+point|가리키다; 점수|Point to the red car.
+instrument|악기; 기구|The piano is my favourite instrument.
+passion|열정|She has a passion for music.
+talkative|수다스러운|My little brother is very talkative.
+activity|활동|Swimming is a fun activity.
+twin|쌍둥이|My friend has a twin sister.
+earthquake|지진|The house shook in the earthquake.
+jaw|턱|A shark has a strong jaw.
+play|연극; 놀다|Our class put on a play.
+clue|단서|The detective found a clue.
+unhappy|기분 나쁜, 불행한|The boy was unhappy when he lost.
+lap|무릎(앉았을 때); 한 바퀴|The cat sat on my lap.
+rebuild|다시 짓다|They will rebuild the old bridge.
+cotton|면, 목화|My T-shirt is made of cotton.
+cash|현금|Do you have any cash?
+country|나라; 시골|Australia is a big country.
+metal|금속|The spoon is made of metal.
+challenge|도전|Climbing the tree was a challenge.
+mayor|시장(市長)|The mayor opened the new park.
+flow|흐르다|The river flows to the sea.
+shut|닫다|Please shut the door.
+realize|깨닫다 (호주: realise)|I realized I left my hat at school.|realised
+rhythm|리듬|Clap your hands to the rhythm.
+## 6
+raw|날것의|Don't eat raw chicken.
+wheat|밀|Bread is made from wheat.
+mind|꺼리다; 마음|Do you mind if I sit here?
+sword|칼, 검|The knight held a sword.
+worried|걱정하는|I am worried about the test.
+injured|다친|The injured bird could not fly.
+square|정사각형; 광장|A square has four sides.
+bend|구부리다|Bend your knees and jump.
+toxic|독성이 있는|Some plants are toxic to dogs.
+sled|썰매|We rode a sled down the snowy hill.
+reuse|재사용하다|We reuse old jars at home.
+return|돌려주다; 돌아오다|Please return the book on Monday.
+crowd|군중, 사람들|A big crowd watched the game.
+bitter|(맛이) 쓴|This medicine tastes bitter.
+law|법|Wearing a seatbelt is the law.
+signal|신호|Wait for the green signal.
+useful|유용한|A torch is useful when camping.
+company|회사|Dad works for a big company.
+fact|사실|Here is a fun fact about sharks.
+gather|모으다, 모이다|We gather shells on the beach.
+term|학기; 용어|School starts next term.
+discuss|의논하다|Let's discuss the plan.
+dusty|먼지투성이의|The old box is dusty.
+compete|경쟁하다|Ten teams compete in the race.
+remain|남다, 계속 ~이다|Please remain in your seats.
+## 7
+hard|딱딱한; 어려운|This test is hard.
+hatch|부화하다|The chicks will hatch soon.
+rail|난간; 철로|Hold the rail on the stairs.
+factory|공장|Cars are made in a factory.
+turn|차례; 돌다|It's your turn to roll.
+list|목록|Make a shopping list.
+plate|접시|Put the cake on a plate.
+festival|축제|We went to a music festival.
+dice|주사위|Roll the dice!
+wooden|나무로 된|I have a wooden spoon.
+radish|무|A radish is red and white.
+million|백만|There are a million stars in the sky.
+diligent|부지런한|She is a diligent student.
+awesome|굉장한, 멋진|That ride was awesome!
+pollute|오염시키다|Rubbish can pollute the ocean.
+porridge|죽, 포리지|I eat porridge for breakfast.
+robotics|로봇 공학|I joined the robotics club.
+rake|갈퀴|Use a rake to pick up leaves.
+grassland|초원|Many animals live on the grassland.
+prize|상, 상품|She won first prize.
+sting|(벌 등이) 쏘다|Bees can sting you.
+wire|철사, 전선|Don't touch that wire.
+chubby|통통한|The baby has chubby cheeks.
+issue|문제, 쟁점|Litter is a big issue at the park.
+lantern|등불, 랜턴|We carried a lantern at night.
+## 8
+study|공부하다|I study English every day.
+delivery|배달|The pizza delivery is here.
+visual|시각의, 눈으로 보는|Pictures are a visual way to learn.
+mustache|콧수염 (호주: moustache)|Grandpa has a big mustache.|moustache
+danger|위험|The sign says danger, so stay back.
+embarrassed|창피한|I was embarrassed when I tripped.
+designer|디자이너|She is a dress designer.
+tradition|전통|Eating pavlova is our Christmas tradition.
+hand|건네주다; 손|Please hand me the scissors.
+explore|탐험하다|Let's explore the rock pools.
+leather|가죽|My shoes are made of leather.
+pharmacy|약국|Mum bought medicine at the pharmacy.
+ago|~전에|We moved here three years ago.
+friendly|친절한, 상냥한|Our neighbour's dog is friendly.
+guy|남자, 녀석|He is a nice guy.
+greet|인사하다, 맞이하다|We greet our teacher every morning.
+anyone|누구든지, 아무나|Does anyone have a pen?
+zone|구역|This is a quiet zone.
+bill|청구서, 계산서|Dad paid the bill.
+branch|나뭇가지; 지점|A bird sat on the branch.
+fasten|매다, 잠그다|Fasten your seatbelt.
+elder|나이가 더 많은; 어른|My elder brother is twelve.
+against|~에 기대어; ~에 맞서|Lean the bike against the wall.
+injury|부상|He had a knee injury.
+college|대학|My cousin goes to college.
+## 9
+top|꼭대기; 윗옷|We climbed to the top of the hill.
+chart|도표|Look at the weather chart.
+count|세다|Can you count to a hundred?
+autumn|가을|Leaves fall in autumn.
+importance|중요성|Mum talked about the importance of sleep.
+aquarium|수족관|We saw sharks at the aquarium.
+vitamin|비타민|Oranges have lots of vitamin C.
+chewy|쫄깃한, 질긴|These lollies are chewy.
+crunch|아삭거림; 아작아작 씹다|I love the crunch of an apple.
+halfway|중간에, 반쯤|We are halfway home.
+surf|파도타기를 하다|I want to surf at the Gold Coast.
+bark|(개가) 짖다; 나무껍질|Dogs bark at the postman.
+silliness|어리석음, 장난|Stop the silliness and sit down.
+beat|이기다; 두드리다|Our team beat them 3 to 1.
+pin|핀|Use a pin to hold the paper.
+foreign|외국의|I want to learn a foreign language.
+freeze|얼다, 얼리다|Water freezes at zero degrees.
+liquid|액체|Juice is a liquid.
+icy|얼음에 덮인, 얼음같이 찬|The road is icy.
+explode|폭발하다|Fireworks explode in the sky.
+sweat|땀을 흘리다; 땀|I sweat when I run.
+zipper|지퍼|My jacket zipper is stuck.
+adventurous|모험심이 강한|My dad is very adventurous.
+remove|없애다, 벗다|Remove your shoes at the door.
+deeply|깊이|Breathe in deeply.
+## 10
+tell|말하다|Tell me a story.
+saw|톱; 보았다(see의 과거)|Dad cut the wood with a saw.
+harm|해, 피해|The sun can harm your skin.
+maybe|아마도|Maybe it will rain.
+abroad|해외에|We travel abroad every year.
+hero|영웅|The firefighter is a hero.
+peel|껍질을 벗기다|Peel the banana.
+divide|나누다|Divide the cake into eight pieces.
+camel|낙타|A camel lives in the desert.
+bow|절하다; 활; 리본|Bow to the audience at the end.
+riddle|수수께끼|Can you answer this riddle?
+rent|(돈 내고) 빌리다|We rent a car on holiday.
+pinch|꼬집다|Don't pinch your sister.
+invent|발명하다|I want to invent a robot.
+crack|금, 갈라진 틈|There is a crack in the window.
+bang|쾅 소리|The door shut with a bang.
+favor|부탁, 호의 (호주: favour)|Can you do me a favor?|favour
+stiff|뻣뻣한|My legs are stiff after the long walk.
+at|~에(서)|Let's meet at the park.
+narrow|좁은|The path is very narrow.
+writer|작가|Roald Dahl was a famous writer.
+paste|풀; 반죽|Use paste to stick the paper.
+scale|저울; 비늘|Put the apples on the scale.
+worse|더 나쁜|My cold got worse.
+palace|궁전|The king lives in a palace.
+## 11
+job|일, 직업|Dad has a new job.
+tie|묶다; 넥타이|Can you tie your shoelaces?
+filter|필터; 거르다|The filter keeps the water clean.
+patch|덧대는 천 조각|Mum sewed a patch on my jeans.
+sticky|끈적끈적한|My hands are sticky from honey.
+pain|아픔, 통증|I have a pain in my tummy.
+barbecue|바비큐|We had a barbecue in the backyard.
+heal|낫다, 치료하다|The cut will heal in a few days.
+twinkle|반짝이다|The stars twinkle at night.
+crazy|정신없는, 미친|That was a crazy day!
+guard|경비원; 지키다|A guard stands at the gate.
+hook|갈고리, 걸이|Hang your bag on the hook.
+free|무료의; 자유로운|The museum is free on Sundays.
+past|(시간이) 지나서; 과거|It is half past three.
+lawn|잔디밭|Dad mows the lawn on Saturday.
+recover|회복하다|I hope you recover soon.
+noise|소음|What is that noise?
+since|~이후로|I have lived here since 2023.
+name|이름을 대다; 이름|Can you name five animals?
+growth|성장|Milk helps your growth.
+weight|무게, 체중|What is the weight of this box?
+client|고객, 의뢰인|The lawyer met her client.
+ponytail|포니테일, 말총머리|She wears her hair in a ponytail.
+sacred|신성한|Uluru is a sacred place.
+wag|(꼬리를) 흔들다|The dog wags its tail.
+## 12
+need|필요하다|I need a drink of water.
+collection|수집(품)|I have a big shell collection.
+shadow|그림자|My shadow is long in the afternoon.
+service|서비스, 봉사|The service at this café is great.
+harbor|항구 (호주: harbour)|Many boats are in the harbor.|harbour
+human|인간|A human has two legs.
+hurricane|허리케인|The hurricane had strong winds.
+craft|공예, 만들기|We did a paper craft in class.
+sphere|구, 구체|A ball is a sphere.
+book|예약하다; 책|Let's book a table for dinner.
+jog|조깅하다|Mum jogs every morning.
+password|비밀번호|Don't tell anyone your password.
+history|역사|I like learning about history.
+lesson|수업, 레슨|I have a swimming lesson today.
+attitude|태도|She has a happy attitude.
+belly|배|The puppy has a pink belly.
+hare|산토끼|The hare and the tortoise had a race.
+customer|손님, 고객|The shop has many customers.
+kid|아이|The kids are playing outside.
+thus|따라서, 그러므로|It rained, thus we stayed inside.
+whistle|호루라기; 휘파람|The coach blew the whistle.
+garage|차고|The car is in the garage.
+thread|실|I need a needle and thread.
+pill|알약|Take one pill after dinner.
+increase|늘다, 증가하다|The price will increase next year.
+## 13
+keep|간직하다, 계속 ~하다|You can keep the book.
+luck|행운|Good luck in your test!
+reach|~에 닿다, 도착하다|I can't reach the top shelf.
+memory|기억, 추억|I have a happy memory of that trip.
+hedgehog|고슴도치|A hedgehog has sharp spikes.
+price|가격|What is the price of this toy?
+lift|들어 올리다|Can you lift this box?
+require|필요로 하다|This game requires four players.
+humorous|재미있는, 유머러스한|He told a humorous story.
+break|쉬는 시간; 깨다|We play during the lunch break.
+cabbage|양배추|Kimchi is made with cabbage.
+among|~사이에|The cat hid among the flowers.
+mark|점수; 표시하다|I got full marks!
+indoor|실내의|We have an indoor pool.
+middle|가운데|Stand in the middle of the room.
+alphabet|알파벳|There are 26 letters in the alphabet.
+trophy|트로피|Our team won a trophy.
+jewel|보석|The crown has a red jewel.
+daily|매일의|Reading is part of my daily routine.
+close|가까운; 닫다|The school is close to my house.
+worn|닳은, 낡은|My shoes are worn out.
+spear|창|The hunter held a long spear.
+because|~때문에|I stayed home because I was sick.
+stove|가스레인지, 난로|Don't touch the hot stove.
+attempt|시도; 시도하다|This is my first attempt.
+## 14
+course|강좌, 과정; 코스|I am doing an art course.
+van|승합차, 밴|The van is full of boxes.
+deliver|배달하다|The postman delivers letters.
+cafeteria|구내식당|We eat lunch in the cafeteria.
+motorcycle|오토바이|The motorcycle is very loud.
+palm|손바닥; 야자수|Put the coin in your palm.
+perform|공연하다|We will perform a song at assembly.
+nation|국가, 나라|Australia is a nation of many cultures.
+lovely|사랑스러운, 멋진|What a lovely day!
+tunnel|터널|The train went through a tunnel.
+by|~로(교통수단); ~옆에|I go to school by bus.
+coach|코치|Our soccer coach is kind.
+role|역할|I have a big role in the play.
+sunset|해 질 녘, 노을|The sunset is orange and pink.
+promise|약속하다|I promise to be good.
+dental|치아의|I have a dental check-up today.
+needle|바늘|Thread the needle carefully.
+magical|마법의, 신비로운|It was a magical night.
+bud|꽃봉오리, 싹|The rose has a small bud.
+pretty|예쁜|What a pretty flower!
+squeeze|짜다, 꽉 쥐다|Squeeze the lemon.
+melt|녹다|The ice cream will melt in the sun.
+grind|갈다, 빻다|Grind the pepper on your food.
+violent|격렬한, 폭력적인|The storm was violent.
+contact|연락하다; 접촉|Contact me if you need help.
+## 15
+well|잘; 우물|You did well!
+breathe|숨 쉬다|Fish breathe under water.
+holiday|휴가, 방학|We go to the beach on holiday.
+sew|바느질하다|Grandma can sew a dress.
+once|한때, 옛날에; 한 번|Once upon a time, there was a king.
+costume|의상, 분장|I wore a pirate costume.
+grilled|구운|I like grilled fish.
+gentleman|신사|He is a kind gentleman.
+airport|공항|We drove to the airport.
+until|~까지|Wait until I come back.
+coast|해안|We live near the coast.
+rule|규칙|Follow the rules of the game.
+scrub|문질러 씻다|Scrub your hands with soap.
+office|사무실|Mum works in an office.
+sneakers|운동화|I got new sneakers for school.
+punch|주먹으로 치다|Don't punch your brother.
+wealthy|부유한|The wealthy man had a big house.
+weigh|무게가 ~이다, 무게를 재다|How much do you weigh?
+stress|스트레스|Exams can cause stress.
+god|신|Zeus was a Greek god.
+cub|(곰·사자 등의) 새끼|The lion cub played with its mum.
+intend|~할 작정이다|I intend to finish my homework.
+transportation|교통수단|Buses and trains are public transportation.
+hidden|숨겨진|We found a hidden cave.
+while|~하는 동안|Don't talk while you eat.
+## 16
+arrow|화살; 화살표|Follow the arrow to the exit.
+example|예, 보기|Can you give me an example?
+wedding|결혼식|My aunt's wedding is in May.
+aloud|소리 내어|Read the story aloud.
+handmade|손으로 만든|I made a handmade card for Mum.
+far|멀리|My school is not far from home.
+lightning|번개|Lightning lit up the sky.
+center|중심, 센터 (호주: centre)|We went to the shopping center.|centre
+wrist|손목|I wear a watch on my wrist.
+blame|탓하다|Don't blame me!
+tear|눈물; 찢다|A tear rolled down her cheek.
+outer|바깥의|The outer part of an egg is the shell.
+alarm|알람; 경보|My alarm rings at seven.
+thankful|감사하는|I am thankful for my family.
+cliff|절벽|Don't go near the edge of the cliff.
+suggest|제안하다|I suggest we play outside.
+flame|불꽃|The candle flame is small.
+steal|훔치다|It is wrong to steal.
+dive|다이빙하다|I can dive into the pool.
+screen|화면|Don't sit too close to the screen.
+spin|빙빙 돌다|Watch the top spin.
+golden|금빛의|The sand is golden.
+crush|으깨다, 찌그러뜨리다|Crush the can before you recycle it.
+capital|수도; 대문자|Canberra is the capital of Australia.
+never|절대 ~않다|I never eat mushrooms.
+## 17
+step|걸음; 계단|Watch your step!
+guide|안내원; 안내하다|The guide showed us the cave.
+supermarket|슈퍼마켓|We buy food at the supermarket.
+allergy|알레르기|My friend has a peanut allergy.
+row|줄, 열|Sit in the front row.
+mobile|휴대전화; 휴대용의|Mum's mobile is ringing.
+painful|아픈|The bee sting was painful.
+complete|완성하다, 끝내다|Complete the puzzle.
+code|암호, 코드|We wrote a secret code.
+repeat|반복하다|Please repeat after me.
+beard|턱수염|Santa has a white beard.
+support|응원하다, 지지하다|My family supports me.
+secret|비밀|Can you keep a secret?
+roar|으르렁거리다|Lions roar loudly.
+speaker|스피커; 말하는 사람|Turn up the speaker.
+forever|영원히|We will be friends forever.
+syrup|시럽|I put syrup on my pancakes.
+photograph|사진|This is a photograph of my family.
+tease|놀리다|Don't tease the younger kids.
+spicy|매운|Kimchi is spicy.
+back|등; 뒤로|My back hurts.
+script|대본|Learn the script for the play.
+reduce|줄이다|We can reduce waste.
+shrimp|새우|I like fried shrimp.
+campfire|모닥불|We sat around the campfire.
+## 18
+sharp|날카로운|The knife is sharp.
+monitor|모니터; 감시하다|The computer monitor is big.
+mild|순한, 온화한|This curry is mild.
+area|지역, 구역|This area is for kids.
+shade|그늘|Sit in the shade on hot days.
+lunchtime|점심시간|We play soccer at lunchtime.
+powder|가루|Mix the powder with water.
+teammate|팀 동료|My teammate passed me the ball.
+starry|별이 많은|It was a starry night.
+character|등장인물|Who is the main character?
+bleed|피가 나다|My knee started to bleed.
+still|가만히; 아직도|Sit still, please.
+fountain|분수|We threw coins into the fountain.
+however|하지만, 그러나|I was tired. However, I finished my work.
+defend|방어하다, 지키다|We must defend our goal.
+frame|틀, 액자|Put the photo in a frame.
+as|~만큼; ~처럼|He is as tall as his dad.
+search|찾다|Search for your missing sock.
+report|보고서|I wrote a report on frogs.
+sigh|한숨 쉬다|She sighed and sat down.
+tub|욕조; 통|The baby is in the tub.
+blind|눈이 먼; 블라인드|The blind man has a guide dog.
+destroy|파괴하다|The storm destroyed the old tree.
+decrease|줄다, 감소하다|The number of birds will decrease.
+suppose|생각하다, 추측하다|I suppose you are right.
+## 19
+try|해 보다, 노력하다|Try your best.
+band|밴드, 악단|My brother plays in a band.
+caterpillar|애벌레|The caterpillar became a butterfly.
+gallery|미술관|We saw paintings at the gallery.
+thought|생각|I had a good thought.
+toast|토스트|I eat toast with jam.
+thousand|천(1,000)|There are a thousand people here.
+greatly|크게, 대단히|My English has greatly improved.
+spread|바르다; 퍼지다|Spread butter on the bread.
+cashier|계산원|Pay the cashier at the front.
+focus|집중하다|Focus on your work.
+sometimes|가끔|Sometimes I walk to school.
+laundry|빨래|Help Mum fold the laundry.
+moonlight|달빛|The lake shines in the moonlight.
+chili|고추 (호주: chilli)|This chili is very hot.|chilli
+reed|갈대|Frogs hide in the reeds.
+twice|두 번|I brush my teeth twice a day.
+fear|두려움|I have a fear of the dark.
+type|타자를 치다; 종류|I can type fast.
+force|힘; 강요하다|The force of the wind broke the branch.
+violence|폭력|Violence is never okay.
+quite|꽤|It is quite cold today.
+damage|피해, 손상|The storm caused damage.
+bother|귀찮게 하다|Don't bother Dad while he works.
+recommend|추천하다|Can you recommend a good book?
+## 20
+own|자신의; 소유하다|I have my own room.
+order|주문하다; 순서|Let's order pizza.
+decorate|장식하다|We decorate the Christmas tree.
+review|복습하다; 검토|Review your words every day.
+scar|흉터|I have a scar on my knee.
+such|정말 ~한, 그런|It was such a fun day!
+batter|반죽; 타자|Mix the pancake batter.
+clinic|병원, 진료소|We went to the clinic.
+classical|고전의, 클래식의|I listen to classical music.
+stuffy|답답한; 코가 막힌|The room is hot and stuffy.
+often|자주|I often play with Sam.
+painkiller|진통제|The doctor gave her a painkiller.
+key|열쇠|I lost my house key.
+eventful|사건이 많은, 다사다난한|We had an eventful holiday.
+track|트랙, 경주로; 자국|We ran around the track.
+action|행동, 동작|I like action movies.
+beverage|음료|Water is the best beverage.
+freckle|주근깨|She has freckles on her nose.
+develop|발달하다, 개발하다|Exercise helps your muscles develop.
+stomach|위, 배|My stomach is full.
+argue|말다툼하다|My sisters argue about the TV.
+advise|조언하다|The doctor advised me to rest.
+mist|안개|The hills are covered in mist.
+surround|둘러싸다|Trees surround our house.
+appearance|외모; 출현|Don't judge people by their appearance.
+## 21
+pine|소나무|A pine tree stays green all year.
+engineer|기술자, 엔지니어|My uncle is an engineer.
+coal|석탄|Coal is black.
+aware|알고 있는|Be aware of cars on the road.
+ability|능력|She has the ability to sing well.
+multiplication|곱셈|I am learning multiplication.
+sweep|쓸다|Sweep the floor, please.
+cultural|문화의|We went to a cultural festival.
+opinion|의견|What is your opinion?
+rescue|구조하다|The lifeguard rescued the boy.
+cycle|순환; 자전거를 타다|The water cycle goes round and round.
+frown|얼굴을 찡그리다|Don't frown. Smile!
+head|향하다; 머리|We head home at three.
+lightly|가볍게|Tap the drum lightly.
+trait|특징, 특성|Kindness is a good trait.
+striped|줄무늬의|A zebra is striped.
+allow|허락하다|Dogs are not allowed in the shop.
+shortcut|지름길|We took a shortcut through the park.
+polish|닦다, 윤을 내다|Dad polishes his shoes.
+basic|기본적인|Learn the basic rules first.
+then|그다음에, 그때|Wash your hands, then eat.
+pretend|~인 척하다|Let's pretend we are pirates.
+depend|의존하다|Babies depend on their parents.
+caution|조심, 주의|Use caution near the pool.
+channel|채널|Change the channel, please.
+## 22
+line|줄, 선|Please wait in line.
+rob|털다, 강탈하다|The pirates tried to rob the ship.
+disabled|장애가 있는|This parking spot is for disabled people.
+beauty|아름다움|The beauty of the beach amazed us.
+even|~조차; 평평한|Even my dad can't solve it.
+raisin|건포도|I have raisins in my cereal.
+setting|배경; 설정|The setting of the story is a farm.
+ladder|사다리|Climb the ladder carefully.
+anymore|더 이상|I don't cry anymore.
+microwave|전자레인지|Heat the milk in the microwave.
+confidence|자신감|She speaks with confidence.
+nephew|(남자) 조카|My aunt calls me her nephew.
+language|언어|Korean is my first language.
+stink|고약한 냄새가 나다|These socks stink!
+appointment|약속, 예약|I have a doctor's appointment.
+sniff|코를 킁킁거리다|The dog sniffs the grass.
+ancient|고대의|We learned about ancient Egypt.
+theater|극장 (호주: theatre)|We saw a play at the theater.|theatre
+loyal|충성스러운, 의리 있는|Dogs are loyal friends.
+frill|주름 장식, 프릴|Her dress has a pink frill.
+monthly|매월의|We get a monthly school newsletter.
+fossil|화석|We found a dinosaur fossil.
+prepare|준비하다|Prepare your bag for school.
+select|고르다|Select your favourite colour.
+demand|요구하다|The baby demands milk.
+## 23
+pan|냄비, 프라이팬|Cook the eggs in a pan.
+anybody|누구든|Is anybody home?
+polite|예의 바른|Be polite to everyone.
+produce|생산하다|Bees produce honey.
+flash|번쩍임; 번쩍이다|I saw a flash of lightning.
+documentary|다큐멘터리|We watched a documentary about whales.
+misunderstand|오해하다|Please don't misunderstand me.
+likely|~할 것 같은|It is likely to rain today.
+tornado|토네이도|A tornado is a strong spinning wind.
+juicy|즙이 많은|This peach is so juicy.
+smash|박살 내다|The ball smashed the window.
+safety|안전|Safety comes first.
+design|디자인하다; 디자인|I design my own T-shirt.
+slip|미끄러지다|Don't slip on the wet floor.
+broad|넓은|The river is broad.
+sample|견본, 시식품|Try a free sample.
+dead|죽은|The plant is dead.
+rainfall|강우(량)|Brisbane gets a lot of rainfall in summer.
+joyful|기쁜, 즐거운|It was a joyful day.
+yet|아직|I haven't finished yet.
+lyric|(노래) 가사|I know every lyric of this song.
+propose|제안하다|I propose a picnic on Sunday.
+neighbor|이웃 (호주: neighbour)|My neighbor has a cat.|neighbour
+annoy|짜증 나게 하다|Flies annoy me.
+frequent|잦은, 빈번한|Storms are frequent in summer.
+## 24
+muscle|근육|Swimming makes your muscles strong.
+birth|출생|My birth date is in April.
+adventure|모험|Let's go on an adventure.
+understand|이해하다|I understand the question.
+also|또한|I also like pizza.
+rhyme|운이 맞다|Cat rhymes with hat.
+fat|지방; 뚱뚱한|This milk has less fat.
+copy|베끼다; 복사|Copy the words into your book.
+habitat|서식지|The ocean is a whale's habitat.
+double|두 배의|I want a double scoop of ice cream.
+exist|존재하다|Do dragons exist?
+brand|상표, 브랜드|What brand are your shoes?
+archer|궁수|The archer hit the target.
+honest|정직한|Always be honest.
+medium|중간의|I want a medium drink.
+length|길이|Measure the length of the table.
+marriage|결혼 (생활)|My grandparents have a long marriage.
+spelling|철자|I have a spelling test on Friday.
+wage|임금|He earns a good wage.
+appear|나타나다|A rainbow appeared after the rain.
+control|조종하다, 통제하다|I can control the robot.
+tough|힘든; 질긴|The test was tough.
+difference|차이|Can you see the difference?
+period|기간; 마침표|We had a short period of rain.
+unknown|알려지지 않은|The man's name is unknown.
+## 25
+note|메모; 음표|I left a note on the fridge.
+pleased|기쁜, 만족한|I am pleased with my work.
+architect|건축가|An architect designs buildings.
+battle|전투|The knights won the battle.
+suck|빨다|The baby sucks its thumb.
+shortly|곧|The bus will arrive shortly.
+fright|공포, 놀람|The loud noise gave me a fright.
+core|(과일의) 속; 핵심|Throw the apple core in the bin.
+afterward|그 후에, 나중에|We had lunch and went home afterward.
+scene|장면|This is my favourite scene in the movie.
+program|프로그램|I watch a TV program about animals.
+couple|두어 개; 커플|I need a couple of minutes.
+moment|순간, 잠깐|Wait a moment, please.
+puzzled|어리둥절한|He looked puzzled by the question.
+equal|같은, 동등한|Cut the cake into equal pieces.
+careless|부주의한|I made a careless mistake.
+cheerful|쾌활한|She is always cheerful.
+solution|해결책; 답|We found a solution to the problem.
+pat|쓰다듬다, 토닥이다|Pat the dog gently.
+nobody|아무도 ~않다|Nobody is in the room.
+moist|촉촉한|This cake is soft and moist.
+bold|대담한; 굵은|Write your name in bold letters.
+bare|맨-, 벌거벗은|I walk on the sand in bare feet.
+lid|뚜껑|Put the lid on the box.
+passionate|열정적인|He is passionate about football.
+## 26
+stick|막대기; 붙이다|The dog found a stick.
+joy|기쁨|She jumped for joy.
+league|리그, 연맹|My team is in a soccer league.
+germ|세균|Wash your hands to kill germs.
+object|물건, 물체|What is that shiny object?
+explorer|탐험가|The explorer crossed the desert.
+smoke|연기|Smoke came out of the chimney.
+extra|추가의|Can I have extra cheese?
+portrait|초상화|I drew a portrait of my mum.
+brilliant|훌륭한; 눈부신|What a brilliant idea!
+meaningful|의미 있는|It was a meaningful gift.
+hump|(낙타의) 혹|A camel has a hump.
+seem|~처럼 보이다|You seem happy today.
+northern|북쪽의|Darwin is in northern Australia.
+anger|분노, 화|He shouted in anger.
+deaf|귀가 먼|My grandpa is a little deaf.
+present|선물; 현재의|I got a present for my birthday.
+face|얼굴; 마주하다|Wash your face.
+farmland|농지|Cows eat grass on the farmland.
+anyway|어쨌든|It was raining, but we played anyway.
+parental|부모의|This movie needs parental guidance.
+upon|~위에 (= on)|Once upon a time, there was a dragon.
+state|주(州); 상태|Queensland is a state of Australia.
+reality|현실|Dreams can become reality.
+accept|받아들이다|Please accept my gift.
+## 27
+glue|풀, 접착제|Use glue to stick the pictures.
+anytime|언제든지|You can call me anytime.
+softness|부드러움|I love the softness of my blanket.
+playful|장난기 많은|The kitten is playful.
+achieve|이루다, 달성하다|You can achieve your goals.
+thief|도둑|The thief took the bag.
+entrance|입구|Meet me at the entrance.
+coral|산호|The coral in the reef is colourful.
+beginning|시작|Read from the beginning.
+else|그 밖의, 다른|What else do you need?
+online|온라인으로|I play games online.
+view|경치, 전망|The view from the top is amazing.
+successful|성공한|The cake sale was successful.
+canyon|협곡|The canyon is very deep.
+spine|척추|Sit up straight to protect your spine.
+plain|평범한, 무늬 없는|I like plain toast.
+flesh|살, 과육|The flesh of a mango is orange.
+barely|간신히, 거의 ~않는|I could barely see in the dark.
+snap|딱 부러지다|The pencil snapped in half.
+historical|역사적인|We visited a historical building.
+toward|~쪽으로|The dog ran toward me.
+cast|깁스; 출연진|He has a cast on his arm.
+include|포함하다|The price includes a drink.
+receive|받다|I received a letter today.
+device|장치, 기기|A phone is a useful device.
+## 28
+grab|움켜잡다|Grab a towel after swimming.
+supper|저녁 식사|We had soup for supper.
+hometown|고향|My hometown is a small city.
+string|끈, 줄|Tie the box with string.
+beg|간청하다, 조르다|The dog begs for food.
+solve|풀다, 해결하다|Can you solve this puzzle?
+completely|완전히|I completely forgot!
+basis|기초, 근거|We practise on a daily basis.
+choice|선택|It's your choice.
+stable|마구간; 안정된|The horse is in the stable.
+rotten|썩은|This apple is rotten.
+textbook|교과서|Open your textbook to page ten.
+terrible|끔찍한|The weather was terrible.
+solid|고체; 단단한|Ice is a solid.
+clearly|분명히, 또렷하게|Please speak clearly.
+stare|빤히 쳐다보다|Don't stare at people.
+protein|단백질|Eggs are full of protein.
+suffer|고통받다|Animals suffer in the heat.
+ton|톤; 아주 많음|An elephant weighs about five tons.
+medal|메달|She won a gold medal.
+enemy|적|The cat is the mouse's enemy.
+bit|조금|Can I have a bit of cake?
+if|만약 ~라면|If it rains, we will stay home.
+overseas|해외로, 해외에|My aunt lives overseas.
+cause|원인; 일으키다|What was the cause of the fire?
+## 29
+practice|연습 (명사)|Soccer practice is on Tuesday.
+lifestyle|생활 방식|A healthy lifestyle is important.
+oak|참나무|An old oak tree stands in the park.
+roast|구운; 굽다|We had roast chicken.
+purchase|구입하다|You can purchase tickets online.
+differently|다르게|We all think differently.
+seal|물개; 봉하다|A seal is swimming in the sea.
+national|국가의|The kangaroo is a national symbol of Australia.
+award|상|He won an award for reading.
+usual|평소의|I woke up at the usual time.
+celebrate|축하하다|We celebrate my birthday with cake.
+capture|붙잡다; 포착하다|I captured the moment with my camera.
+bloody|피투성이의|He had a bloody nose.
+pale|창백한; 연한|You look pale. Are you okay?
+main|주된|The main road is busy.
+neat|깔끔한|Keep your desk neat.
+circus|서커스|We saw clowns at the circus.
+bathe|목욕시키다|Mum bathes the baby.
+total|합계|The total is fifty dollars.
+male|수컷의, 남성의|The male lion has a mane.
+direct|직행의, 직접적인|There is a direct flight to Brisbane.
+relate|공감하다; 관련시키다|I can relate to that story.
+deal|거래, 약속|It's a deal!
+private|개인적인|This is a private room.
+progress|진전, 발전|You are making great progress.
+## 30
+spot|점; 장소|A ladybird has black spots.
+about|~에 대해|This book is about dogs.
+beside|~옆에|Sit beside me.
+repair|수리하다|Can you repair my bike?
+laziness|게으름|Laziness won't help you win.
+burner|(가스레인지) 화구, 버너|Turn off the burner.
+steak|스테이크|Dad cooked steak on the barbecue.
+peace|평화|We want peace in the world.
+lonely|외로운|I felt lonely on the first day.
+record|기록; 녹음하다|She broke the school record.
+delete|지우다, 삭제하다|Delete the old photos.
+rude|무례한|It is rude to interrupt.
+teen|십 대|My cousin is a teen.
+motor|모터|The boat has a motor.
+helicopter|헬리콥터|A helicopter flew over the house.
+connect|연결하다|Connect the dots.
+sight|광경; 시력|The sunset was a beautiful sight.
+sprinkle|뿌리다|Sprinkle sugar on top.
+sense|감각|A dog has a good sense of smell.
+prefer|더 좋아하다|I prefer cats to dogs.
+sentence|문장|Write a sentence with this word.
+pleasure|기쁨|It's a pleasure to meet you.
+false|틀린, 거짓의|Is it true or false?
+attention|주의, 집중|Pay attention in class.
+purpose|목적|What is the purpose of this button?
+`;
+const L2_TEXT=`## 1
+translate|번역(통역)하다|Can you translate this into Korean?
+glide|미끄러지듯이 가다, 활공하다|The eagle glides over the hills.
+shock|충격, 쇼크|The cold water was a shock.
+direction|방향; 지시, 사용법|Which direction is the beach?
+rival|경쟁자|The two teams are old rivals.
+cattle|소(무리)|The farmer has a hundred cattle.
+march|행진하다|The band marched down the street.
+national|국가의, 국가적인|Today is a national holiday.
+mostly|대부분, 주로|I mostly eat rice for dinner.
+by|~옆에; ~로; ~까지|Please finish your homework by Friday.
+fin|지느러미|A shark has a big fin on its back.
+salmon|연어|We had salmon for dinner.
+term|용어, 말; 학기, 기간|Term 4 starts in October.
+luckily|운이 좋게|Luckily, it stopped raining.
+coach|코치, 감독|The coach told us to run faster.
+avoid|피하다|Try to avoid the puddles.
+realize|깨닫다 (호주: realise)|Did you realize it was so late?|realise
+ordinary|평범한, 보통의|It was just an ordinary day.
+regular|규칙적인|Regular exercise keeps you healthy.
+spark|불꽃|A spark flew from the fire.
+simply|그냥, 간단히|Simply press the green button.
+terrific|굉장한, 아주 멋진|You did a terrific job!
+bothersome|성가신, 귀찮은|The flies are bothersome today.
+genius|천재|Einstein was a genius.
+clip|핀, 클립|Hold the papers with a clip.
+## 2
+rocky|바위투성이의|We walked along the rocky shore.
+deal|다루다; 거래하다|I can deal with this problem.
+stall|가판대|We bought fruit from a market stall.
+creative|창조적인, 창의적인|Ian is very creative with Lego.
+chuckle|껄껄 웃다, 싱긋이 웃다|Grandpa chuckled at my joke.
+speech|연설, 말하기|She gave a speech at assembly.
+earn|(돈을) 벌다|I earn pocket money by doing chores.
+sentence|문장; 형을 선고하다|Write a sentence with this word.
+prefer|선호하다, 더 좋아하다|I prefer swimming to running.
+marathon|마라톤|My dad ran a marathon.
+anywhere|어딘가에; 어디든|You can sit anywhere you like.
+awareness|알고 있음, 의식|We need more awareness about plastic waste.
+specially|특별히|This cake was made specially for you.
+raise|올리다, 높이다|Raise your hand if you know the answer.
+sandy|모래로 덮인|My feet are sandy after the beach.
+sliced|얇게 썬|I like sliced apples in my lunchbox.
+site|장소|This is a building site.
+congratulation|축하|Congratulations on winning the race!
+style|방식, 양식|I like your hair style.
+director|책임자, 감독|The director told the actors what to do.
+experience|경험; 경험하다|Camping was a great experience.
+bit|조금; 부분, 일부|I am a bit tired.
+state|상태|The old house is in a bad state.
+highway|고속도로|We drove on the highway to Sydney.
+dam|댐, 둑|Beavers build a dam in the river.
+## 3
+nail|손톱; 못|Dad hit the nail with a hammer.
+exchange|교환하다|Let's exchange stickers.
+tourist|관광객, 여행자|Many tourists visit the Gold Coast.
+detail|세부 사항|Look at the small details in the picture.
+motivate|동기를 주다|My coach motivates me to try hard.
+walnut|호두|A walnut has a hard shell.
+blast|폭발, 돌풍|A blast of wind blew my hat away.
+totally|완전히, 전적으로|I totally forgot my homework.
+assistant|조수, 보조|The teacher's assistant helped me read.
+serious|심각한, 진지한|This is a serious problem.
+firework|폭죽, 불꽃|We watched the fireworks on New Year's Eve.
+compare|비교하다|Compare the two drawings.
+lead|이끌다, 인도하다|The guide will lead us up the mountain.
+mine|나의 것; 광산|That red bike is mine.
+roughly|거칠게; 대략, 거의|There are roughly 30 kids in my class.
+parachute|낙하산|The man jumped with a parachute.
+teamwork|팀워크, 협력|We won because of good teamwork.
+furious|몹시 화가 난|Mum was furious when I broke the vase.
+flight|비행; 항공편|Our flight to Seoul is at 9 am.
+horror|공포; 공포의|I don't like horror movies.
+somebody|어떤 사람, 누군가|Somebody left a bag on the bus.
+spoil|망치다|Rain spoiled our picnic.
+whole|전체의, 모든|I ate the whole sandwich.
+mimic|흉내 내다|Parrots can mimic people.
+wildlife|야생 동물|Australia has amazing wildlife.
+## 4
+truly|진실로, 정말로|I am truly sorry.
+discovery|발견|The scientist made a big discovery.
+wander|돌아다니다, 헤매다|We wandered around the market.
+breeze|산들바람, 미풍|A cool breeze came from the sea.
+accident|사고; 우연|There was a car accident on the road.
+sunburn|햇볕에 탐|Wear a hat or you will get sunburn.
+cinema|영화관, 극장|We watched a movie at the cinema.
+upstairs|위층으로(에서)|My bedroom is upstairs.
+bride|신부|The bride wore a white dress.
+whisper|속삭이다|She whispered a secret to me.
+delay|지연, 지체|There was a delay at the airport.
+flow|흐르다|The river flows into the sea.
+slippery|미끄러운|The floor is wet and slippery.
+peek|훔쳐보다, 엿보다|Don't peek at your presents!
+underwater|물속의, 수중의|I can swim underwater.
+southern|남쪽의, 남쪽에 있는|Tasmania is in southern Australia.
+common|보통의, 흔한; 공통의|Kim is a common Korean name.
+among|(셋 이상) ~중에, ~사이에|The house is among the trees.
+swamp|늪, 습지|Crocodiles live in the swamp.
+none|아무도 ~않다|None of my friends were late.
+owner|소유자|Who is the owner of this dog?
+persuade|설득하다|I persuaded Mum to buy ice cream.
+container|용기, 그릇|Put the leftovers in a container.
+clear|분명한; 치우다|Please clear the table after dinner.
+gather|모이다|The kids gathered around the teacher.
+## 5
+sunshine|햇빛|We played outside in the sunshine.
+course|과목, 교과 과정|My sister is doing a cooking course.
+fair|공정한, 공평한|That's not fair!
+pardon|용서하다|Pardon me, can you say that again?
+handwriting|손 글씨, 필적|Your handwriting is very neat.
+disagree|반대하다, 동의하지 않다|I disagree with you.
+temple|사원, 절|We visited an old temple in Korea.
+digest|소화하다|It takes time to digest food.
+provide|제공하다|The school provides free fruit.
+staff|직원|The hotel staff were very kind.
+active|활동적인, 적극적인|My dog is very active.
+false|틀린, 거짓의|Is this true or false?
+business|사업|My uncle has a small business.
+already|이미, 벌써|I have already finished my lunch.
+bell|종, 벨|The school bell rang.
+moreover|게다가, 더욱이|It was cold. Moreover, it was raining.
+depart|떠나다, 출발하다|The train departs at 10 o'clock.
+explode|터지다, 폭발하다|The balloon exploded with a bang.
+trap|덫, 함정; 가두다|The mouse was caught in a trap.
+darkness|어둠, 암흑|I can't see in the darkness.
+shame|부끄러움, 수치심|It's a shame you can't come.
+debut|데뷔, 첫 출연|The singer made her debut at sixteen.
+sneeze|재채기하다|Cover your mouth when you sneeze.
+fist|주먹|He made a fist.
+against|~에 반대하여; ~에 기대어|My bike is leaning against the fence.
+## 6
+cornflakes|콘플레이크|I eat cornflakes for breakfast.
+client|고객, 의뢰인|The lawyer is meeting a client.
+spy|스파이; 몰래 감시하다|The spy wore dark glasses.
+tilt|기울이다|Tilt your head to the left.
+even|~조차; 평평한|Even my teacher laughed.
+diet|식사, 음식물|A healthy diet has lots of vegetables.
+feature|특징|Big ears are a feature of the koala.
+sprain|(발목·손목 등을) 삐다|I sprained my ankle playing soccer.
+trade|거래, 무역; 거래하다|Let's trade cards.
+underground|지하의|The train goes through an underground tunnel.
+since|~부터; ~한 이후로; ~때문에|I have known Sam since kindy.
+excitement|흥분, 신남|The kids shouted with excitement.
+downstairs|아래층으로(에서)|Breakfast is ready downstairs.
+kneel|무릎을 꿇다|Kneel down and look under the bed.
+flood|홍수|The flood covered the road.
+wise|지혜로운, 현명한|The old owl was very wise.
+groom|신랑|The groom wore a black suit.
+date|날짜|What's the date today?
+shed|(털·껍질·잎 등이) 빠지다, 벗어지다|Snakes shed their skin.
+war|전쟁|Many people died in the war.
+suspend|중지하다|The game was suspended because of rain.
+delete|삭제하다, 지우다|Delete the blurry photos.
+bushy|덥수룩한, 무성한|The fox has a bushy tail.
+tortoise|거북|The tortoise walks very slowly.
+wiggle|흔들다, 꿈틀거리다|Can you wiggle your ears?
+## 7
+as|~로서; ~와 같이; ~할 때|She works as a nurse.
+flush|씻어 내리다|Don't forget to flush the toilet.
+droplet|작은 물방울|Droplets of rain hung on the leaf.
+offer|제안하다|He offered me a cookie.
+trace|흔적; 추적하다|Trace the shape with your finger.
+unlike|~와 달리|Unlike me, my brother loves carrots.
+grip|꽉 붙잡음|Keep a tight grip on the rope.
+bomb|폭탄|The water bomb burst on my head.
+embarrassing|난처하게 하는|Falling over on stage was embarrassing.
+relaxed|여유 있는, 느긋한|I feel relaxed after a warm bath.
+garage|차고|Dad keeps his tools in the garage.
+treadmill|러닝머신, 트레드밀|Mum runs on the treadmill.
+childish|어린애 같은, 유치한|Don't be so childish!
+struggle|애쓰다, 노력하다; 투쟁|I struggled to open the jar.
+stadium|경기장|The stadium was full of fans.
+expert|전문가|She is an expert on snakes.
+gymnasium|체육관, 실내 경기장|We play basketball in the gymnasium.
+movement|움직임|I saw a movement in the bushes.
+bill|계산서, 청구서|Can we have the bill, please?
+few|적은, 거의 없는; 몇몇|Only a few people came.
+harmful|해로운|Smoking is harmful to your health.
+imagine|상상하다|Imagine you are a bird.
+patient|참을성 있는; 환자|Please be patient and wait.
+texture|감촉, 질감|This blanket has a soft texture.
+stupid|어리석은|That was a stupid mistake.
+## 8
+watery|물의, 묽은|The soup is too watery.
+stutter|말을 더듬다|He stutters when he is nervous.
+ever|언젠가, 지금까지; 언제나|Have you ever seen a koala?
+drought|가뭄|The farm was dry during the drought.
+difficulty|어려움, 곤경|I had difficulty with the maths test.
+eastern|동쪽의, 동쪽에 있는|Brisbane is on the eastern coast.
+vacuum|진공청소기로 청소하다|Please vacuum your room.
+sight|시력; 광경|Eagles have great sight.
+comic|웃기는; 만화책|I love reading comics.
+advance|전진, 진보|There have been big advances in science.
+poem|시, 운문|I wrote a poem about the sea.
+lean|기대다, 의지하다|Don't lean on the door.
+volleyball|배구|We played volleyball on the beach.
+tidy|깔끔한, 정돈된|My room is tidy now.
+direct|지도하다, 지시하다; 직접적인|A police officer directed the traffic.
+approach|다가가다|The cat approached the bird slowly.
+actual|실제의, 사실상의|The actual price was higher.
+mention|언급하다|She didn't mention the party.
+notice|알아차리다, 주목하다|Did you notice my new shoes?
+vibrate|흔들리다, 진동하다|My phone vibrates when I get a message.
+mystery|신비, 수수께끼|How the cookies disappeared is a mystery.
+hate|미워하다, 싫어하다|I hate getting up early.
+sparkling|반짝거리는|The sea was sparkling in the sun.
+midnight|한밤중, 밤 열두 시|We stayed up until midnight.
+subject|과목; 주제, 화제|My favourite subject is science.
+## 9
+lend|빌려주다|Can you lend me your ruler?
+sew|바느질하다, 꿰매다|Grandma sewed a button on my shirt.
+multiply|곱하다|Multiply 3 by 4.
+comfortable|편안한|This sofa is very comfortable.
+nutrient|영양소, 영양분|Plants get nutrients from the soil.
+disease|병, 질병|Washing hands stops disease.
+unfair|부당한, 불공평한|It's unfair that he got more.
+sharpen|날카롭게 하다|Sharpen your pencil before the test.
+parade|행진, 퍼레이드|We watched the Anzac Day parade.
+guest|손님|We have guests for dinner tonight.
+pollution|오염|Cars cause air pollution.
+athletic|운동 경기의; 운동선수다운|My brother is very athletic.
+pirate|해적|The pirate had a parrot.
+seafood|해산물|I love seafood, especially prawns.
+hut|오두막|We stayed in a hut in the mountains.
+sadness|슬픔|I felt sadness when my fish died.
+either|(둘 중) 어느 하나; ~도 역시|You can have either cake or ice cream.
+normal|보통의, 정상적인|It is normal to feel nervous.
+authority|지휘권, 권한|The principal has authority in the school.
+weed|잡초|Pull out the weeds in the garden.
+trunk|(나무의) 줄기; 트렁크|The tree has a thick trunk.
+bloom|꽃을 피우다|Jacaranda trees bloom in spring.
+dune|모래 언덕, 사구|We slid down the sand dune.
+suitable|적당한, 적절한|This movie is suitable for kids.
+film|영화|Let's watch a film tonight.
+## 10
+actually|실제로, 사실상|Actually, I like broccoli.
+post|발송하다; 게시하다|I posted a letter to Grandma.
+local|지역의, 현지의|We shop at the local market.
+payment|지불, 납부|Cash payment only.
+village|마을, 촌락|My grandma lives in a small village.
+tricky|교활한; 어려운|This puzzle is tricky.
+potluck|음식을 가져와 나눠 먹는 식사|Everyone brought food to the potluck.
+warn|경고하다|The sign warns us about sharks.
+religious|종교적인, 신앙심이 깊은|Christmas is a religious holiday.
+slight|약간의, 조금의|I have a slight cold.
+necessary|필요한|Sunscreen is necessary in summer.
+perform|공연하다|We performed a dance at the concert.
+harm|해, 피해; 해를 끼치다|The dog won't harm you.
+flu|독감|I stayed home with the flu.
+population|인구|What is the population of Brisbane?
+enjoyable|즐거운|We had an enjoyable day at the zoo.
+porch|현관|The parcel is on the porch.
+swing|그네; 흔들다|I love playing on the swing.
+shocking|충격적인, 쇼킹한|The news was shocking.
+express|표현하다, 나타내다|Draw a picture to express your feelings.
+creator|창작자, 창조자|Who is the creator of this game?
+let|~하게 허락하다|Let me help you.
+neither|어느 쪽도 ~이 아니다|Neither of us likes spinach.
+narrator|서술자, 내레이터|The narrator tells the story.
+behave|행동하다, 처신하다|Please behave in the library.
+## 11
+appreciate|고마워하다|I appreciate your help.
+female|여성의, 암컷의|The female lion hunts for food.
+oxygen|산소|We need oxygen to breathe.
+expect|예상하다, 기대하다|I expect it will rain today.
+distance|거리, 간격|What is the distance to the shop?
+novel|소설|She is reading a long novel.
+gem|보석|The crown was covered in gems.
+fashion|패션; 유행|Big jackets are in fashion now.
+baggage|짐, 수하물|Pick up your baggage at the airport.
+vapor|증기 (호주: vapour)|Water turns into vapor when it boils.|vapour
+flipper|지느러미발, 물갈퀴|Turtles swim with their flippers.
+spacesuit|우주복|The astronaut put on a spacesuit.
+unusual|특이한, 드문|It is unusual to see snow in Brisbane.
+receive|받다|I received a parcel today.
+prove|증명하다|Can you prove it?
+excuse|용서하다; 변명|Excuse me, where is the toilet?
+sale|판매|The house is for sale.
+farthest|가장 먼|Who can throw the ball the farthest?
+text|글; 문자를 보내다|Mum texted me after school.
+decision|결정, 판단|It was a hard decision.
+cycle|주기; 순환|We learned about the life cycle of a frog.
+bear|참다, 견디다|I can't bear this heat.
+convenient|편리한|The shop is very convenient.
+meteor|별똥별, 유성|We saw a meteor in the night sky.
+freedom|자유|Birds have the freedom to fly.
+## 12
+carve|조각하다; 새기다|We carved a pumpkin for Halloween.
+biologist|생물학자|A biologist studies living things.
+lessen|줄다, 완화되다|The medicine will lessen the pain.
+discuss|논의하다, 토론하다|Let's discuss the story.
+weaken|약하게 하다, 약해지다|The storm weakened at night.
+advantage|유리한 점, 이점|Being tall is an advantage in basketball.
+smash|부수다, 박살 내다|The ball smashed the window.
+culture|문화, 교양|I want to learn about Korean culture.
+mature|성숙한|She is very mature for her age.
+cavity|충치|Too many lollies can cause a cavity.
+trail|오솔길, 산길|We walked along the bush trail.
+pollute|오염시키다|Factories pollute the river.
+explain|설명하다|Can you explain this game?
+background|배경, 이력|The photo has a blue background.
+countryside|시골, 지방|We drove through the countryside.
+haunt|(유령 등이) 나타나다, 출몰하다|They say a ghost haunts the old house.
+cemetery|묘지, 공동묘지|There is an old cemetery near the church.
+alike|비슷한|The twins look alike.
+lose|잃다; 지다|Don't lose your hat.
+training|교육, 훈련|Soccer training is on Monday.
+surface|표면|The surface of the table is smooth.
+plug|플러그|Put the plug in the bath.
+injury|부상, 상해|He has a knee injury.
+summary|요약, 개요|Write a summary of the book.
+shut|닫힌|The shop is shut on Sunday.
+## 13
+extra|추가의, 여분의|Bring an extra pair of socks.
+angrily|화나서|She shouted angrily.
+found|설립하다, 세우다|They founded the school in 1950.
+adventurous|모험을 즐기는|My cousin is very adventurous.
+backward|뒤(쪽으)로|Can you walk backward?
+growth|성장, 증가|Sleep is important for growth.
+competition|경쟁, 대회, 시합|I won the drawing competition.
+escape|탈출하다, 벗어나다|The bird escaped from its cage.
+word|말, 단어|What does this word mean?
+nowadays|요즘에는|Nowadays, everyone has a phone.
+weapon|무기|A sword is a weapon.
+performance|공연, 연주회|Our school performance was great.
+pebble|조약돌|I found a smooth pebble on the beach.
+worse|더 나쁜, 더 심한|My cough is worse today.
+information|정보|Ask at the desk for information.
+usage|사용|Water usage is high in summer.
+responsibility|책임, 의무|Feeding the dog is my responsibility.
+fit|맞다; 건강한|These shoes fit me well.
+sprout|싹트다; 싹, 새싹|The seeds sprouted after a week.
+gear|장비|Bring your camping gear.
+branch|나뭇가지; 분점, 지사|A bird sat on the branch.
+elegant|우아한, 고상한|The swan looks elegant.
+presentation|발표, 프레젠테이션|I gave a presentation about koalas.
+plow|쟁기로 갈다 (호주: plough)|The farmer plows the field.|plough
+anxiety|불안, 걱정|She felt anxiety before the test.
+## 14
+celebrity|유명인, 연예인|A celebrity came to our school.
+pride|자부심|He looked at his trophy with pride.
+fearless|용감한, 두려움이 없는|The fearless girl jumped into the pool.
+truth|사실, 진리|Always tell the truth.
+mean|의미하다; 못된|What does this word mean?
+customer|손님, 고객|The shop has many customers.
+kit|(도구·장비) 세트|Bring your first aid kit.
+spring|봄; 샘|Flowers bloom in spring.
+popularity|인기|The game grew in popularity.
+tide|조수(밀물과 썰물)|The tide is coming in.
+especially|특히|I love fruit, especially mangoes.
+cast|던지다; 깁스|He has a cast on his arm.
+sum|액수, 합계|What is the sum of 5 and 7?
+plumber|배관공|The plumber fixed the leaking tap.
+household|가정, 가족|Every household has a rubbish bin.
+forgive|용서하다|Please forgive me.
+mood|기분, 분위기|I'm in a good mood today.
+gain|얻다|You gain points for each answer.
+whisker|(고양이 등의) 수염|The cat has long whiskers.
+architecture|건축(학)|I love the architecture of the Opera House.
+quit|그만두다|Don't quit, keep trying!
+gravity|중력|Gravity makes things fall down.
+various|다양한, 여러 가지의|The shop sells various toys.
+western|서쪽의; 서양의|Perth is in Western Australia.
+historic|역사적으로 중요한|We visited a historic building.
+## 15
+memory|기억(력)|I have a good memory.
+hunger|배고픔, 굶주림|Many people suffer from hunger.
+brief|짧은|We had a brief chat.
+activity|활동, 운동|Swimming is my favourite activity.
+countless|셀 수 없는|There are countless stars in the sky.
+handy|편리한, 유용한|A torch is handy when camping.
+protect|보호하다|Sunscreen protects your skin.
+vehicle|탈것, 운송 수단|A bus is a big vehicle.
+university|대학|My cousin goes to university.
+interest|관심, 흥미|I have an interest in space.
+grassy|풀로 덮인, 풀이 무성한|We had a picnic on a grassy hill.
+flesh|(사람·동물의) 살, 고기|Lions eat flesh.
+engine|엔진|The car engine is very loud.
+grade|학년; 성적|I am in Grade 3.
+smooth|부드러운, 매끄러운|The stone is smooth.
+instead|대신에|Let's walk instead of driving.
+flatten|납작하게 하다|Flatten the dough with your hands.
+attack|공격; 공격하다|The dog attacked the ball.
+stand|참다, 견디다; 가판대|I can't stand the noise.
+nation|국가|Australia is a big nation.
+agree|동의하다|I agree with you.
+elementary|초등의, 초급의|My brother goes to elementary school.
+hidden|숨겨진, 비밀의|We found a hidden door.
+depress|우울하게 하다|Rainy days depress me.
+homeland|고국, 조국|Korea is my dad's homeland.
+## 16
+herd|(동물의) 떼, 무리|A herd of cows is in the field.
+rock|바위; 흔들다|We sat on a big rock.
+friendship|우정|Our friendship is important to me.
+posture|자세|Sit up straight with good posture.
+slope|경사, 슬로프|We rolled down the grassy slope.
+heroism|영웅적 행위|The firefighter got a medal for heroism.
+correctly|정확하게, 바르게|Spell the words correctly.
+label|라벨; 라벨을 붙이다|Read the label on the bottle.
+heavenly|멋진, 훌륭한|This chocolate cake is heavenly.
+fever|(몸의) 열|I have a fever, so I'm staying home.
+particular|특정한|I like this particular song.
+store|가게; 저장하다|Squirrels store nuts for winter.
+rod|막대|I caught a fish with my fishing rod.
+journey|여행, 여정|The journey to Cairns was long.
+overtime|초과 근무, 잔업|Dad worked overtime last night.
+phrase|구, 구절, 관용구|Learn this useful phrase.
+recognize|알아보다 (호주: recognise)|Do you recognize this song?|recognise
+animation|애니메이션, 만화 영화|I love watching animation.
+hesitate|망설이다, 주저하다|Don't hesitate to ask for help.
+historian|역사가, 역사학자|A historian studies the past.
+drain|(액체를) 흘려보내다; 배수하다|Drain the water from the pasta.
+preference|더 좋아함, 선호|Do you have a preference for tea or juice?
+visible|눈에 보이는|The moon is visible tonight.
+microscope|현미경|We looked at a leaf under a microscope.
+refund|환불|The shop gave me a refund.
+## 17
+someday|언젠가, 훗날|Someday I want to go to space.
+match|경기; 어울리다|We won the soccer match.
+advise|조언하다, 충고하다|The doctor advised me to rest.
+determine|결정하다|The test will determine the winner.
+mow|(잔디를) 깎다|Dad mows the lawn every week.
+artwork|미술품, 예술품|Our artwork is on the wall.
+neighborhood|이웃(동네), 부근 (호주: neighbourhood)|There is a park in our neighborhood.|neighbourhood
+behavior|행동, 품행 (호주: behaviour)|Good behavior gets a sticker.|behaviour
+starve|굶주리다, 굶어 죽다|Animals can starve in a drought.
+predict|예측하다, 전망하다|Can you predict what happens next?
+land|착륙하다; 육지, 땅|The plane will land soon.
+ban|금지하다|Phones are banned in class.
+magazine|잡지|Mum is reading a magazine.
+worth|~의 가치가 있는|This old coin is worth a lot.
+nod|끄덕이다; 끄덕임|He nodded his head.
+servant|하인, 고용인|The king had many servants.
+depth|깊이|What is the depth of the pool?
+graceful|우아한|The dancer is very graceful.
+brightly|밝게, 빛나게|The sun is shining brightly.
+wagon|4륜마차, 짐마차|The horse pulled a wagon.
+pronounce|발음하다|How do you pronounce this word?
+coal|석탄|Coal is used to make electricity.
+stranger|낯선 사람, 타인|Don't talk to strangers.
+solar|태양의|Our house has solar panels.
+mysterious|신비한, 불가사의한|We heard a mysterious noise.
+## 18
+relief|안도|What a relief, I found my keys!
+altogether|모두 합쳐; 완전히|That's ten dollars altogether.
+arrival|도착|We waited for the arrival of the train.
+net|그물(망)|The fish got caught in the net.
+respond|대답하다, 응답하다|Please respond to my email.
+locate|위치를 찾아내다|Can you locate Brisbane on the map?
+basement|지하층, 지하실|We keep old boxes in the basement.
+witness|목격하다|Did you witness the accident?
+lab|실험실, 연구실|Scientists work in a lab.
+nightfall|해 질 녘, 황혼|We got home before nightfall.
+lively|생기 있는, 활기찬|The market is lively on Saturday.
+bother|괴롭히다, 귀찮게 하다|Don't bother your sister.
+attic|다락방|There are old toys in the attic.
+backstage|무대 뒤로|The actors waited backstage.
+aid|도움, 지원; 돕다|I learned first aid at school.
+overcome|극복하다|You can overcome your fear of the dark.
+star|(인기) 스타; 별|He is a movie star.
+kernel|(곡식의) 알맹이, 낟알|A popcorn kernel pops in the heat.
+beloved|가장 사랑하는, 소중한|This is my beloved teddy bear.
+improve|개선하다, 나아지다|My reading has improved a lot.
+snatch|잡아채다, 빼앗다|The seagull snatched my chips!
+railway|철도|The old railway station is closed.
+horrible|끔찍한, 무서운|I had a horrible dream.
+current|현재의|What is the current time?
+purse|지갑|Mum put her purse in her bag.
+## 19
+belong|속하다|This book belongs to me.
+call|부르다; 이름을 지어 주다|We call our dog Max.
+pray|기도하다, 기원하다|We pray before dinner.
+creature|생물, 창조물|The ocean is full of strange creatures.
+president|대통령, 회장|She is the president of the club.
+able|~할 수 있는|I am able to swim 50 metres.
+belief|신념, 믿음|I have a strong belief in kindness.
+scramble|(달걀) 스크램블을 만들다|Dad scrambled some eggs.
+aisle|통로, 복도|The milk is in aisle 5.
+overnight|밤사이에, 하룻밤 동안|It rained overnight.
+hexagon|육각형|A hexagon has six sides.
+cure|낫게 하다, 치유하다|Is there a cure for the cold?
+model|모형; 모델|I built a model plane.
+immediately|즉시, 당장에|Come here immediately!
+curious|궁금한, 호기심이 많은|Cats are curious animals.
+prevent|막다, 예방하다|Wash your hands to prevent germs.
+lifetime|일생, 평생|It was the trip of a lifetime.
+soldier|군인, 병사|The soldier saluted.
+somewhere|어딘가에; 대략|My keys are somewhere in the house.
+level|수준, 정도|I finished level 3 of the game.
+gesture|몸짓, 제스처|A wave is a friendly gesture.
+resident|거주민|All residents must park here.
+allow|허락하다|Dogs are not allowed on this beach.
+organ|(인체의) 장기; 오르간|The heart is an important organ.
+crime|범죄|Stealing is a crime.
+## 20
+crumb|(빵 등의) 부스러기, 조각|There are crumbs on the table.
+entertain|즐겁게 해 주다|The clown entertained the kids.
+article|(신문·잡지의) 글, 기사|I read an article about sharks.
+power|힘|The storm had great power.
+headline|(신문 기사의) 제목, 헤드라인|The headline was about the floods.
+librarian|(도서관의) 사서|The librarian helped me find a book.
+possible|가능한|Is it possible to finish today?
+disturb|방해하다|Please don't disturb Dad. He's working.
+crystal|결정체; 크리스털, 수정|Salt crystals look like tiny cubes.
+mild|온화한, 따뜻한|Brisbane has mild winters.
+carriage|마차|The princess rode in a carriage.
+fluffy|솜털의, 푹신한|The kitten is so fluffy.
+upset|속상한, 화난|She was upset about losing.
+referee|(운동 경기의) 심판|The referee blew the whistle.
+regard|여기다|We regard him as our leader.
+passport|여권|Don't forget your passport.
+apply|신청하다; (크림 등을) 바르다|Apply sunscreen before you go out.
+disappear|사라지다|The sun disappeared behind the clouds.
+bet|내기, 도박|I bet you can't catch me!
+meaningful|의미 있는, 중요한|Grandma gave me a meaningful gift.
+athlete|운동선수|She is a great athlete.
+pronunciation|발음|Your pronunciation is very good.
+kettle|주전자|Mum boiled water in the kettle.
+relationship|관계|They have a good relationship.
+punish|처벌하다, 벌주다|The teacher punished the boy for lying.
+## 21
+charming|매력적인|The old town is charming.
+alongside|~옆에, 나란히|The dog ran alongside my bike.
+treat|다루다; 특별한 음식, 간식|Ice cream is a special treat.
+degree|각도, 온도; 학위|It is 30 degrees today.
+lastly|마지막으로, 끝으로|Lastly, put the cherry on top.
+path|길, 오솔길|Follow the path to the lake.
+amaze|놀라게 하다|The magic trick amazed us.
+shot|발포, 발사; 슛|He took a shot at the goal.
+exactly|정확하게|That's exactly right!
+chance|가능성; 기회|There is a chance of rain.
+canvas|화폭, 캔버스|The artist painted on a canvas.
+consumer|소비자|Consumers want cheap prices.
+dozen|12개|Mum bought a dozen eggs.
+author|작가, 저자|Who is the author of this book?
+leader|지도자, 리더|She is the leader of our group.
+intelligent|총명한, 똑똑한|Dolphins are intelligent animals.
+relative|친척; 상대적인|All my relatives came to the party.
+passenger|승객|The bus has twenty passengers.
+despite|~에도 불구하고|We played outside despite the rain.
+topic|주제, 화제|The topic of my talk is sharks.
+unexpected|예상 밖의|We had an unexpected visitor.
+closely|면밀하게, 자세히|Look closely at the picture.
+insert|끼워 넣다, 삽입하다|Insert a coin into the machine.
+precise|정확한|Use precise measurements.
+overweight|중량 초과의|My suitcase is overweight.
+## 22
+receipt|영수증|Keep the receipt.
+tough|힘든; 강한, 질긴|The test was tough.
+odd|이상한; 홀수의|Three is an odd number.
+situation|상황|This is a tricky situation.
+thick|두꺼운|This book is very thick.
+submarine|잠수함|A submarine can go deep under the sea.
+broadcast|방송하다|The game is broadcast live on TV.
+mistake|실수, 잘못|Everyone makes mistakes.
+value|가치|This ring has great value.
+transform|변형시키다|A caterpillar transforms into a butterfly.
+brochure|소책자, 브로슈어|Look at the holiday brochure.
+prepare|준비하다|Prepare your bag for school.
+audience|청중, 관중|The audience clapped loudly.
+company|회사; 친구들, 동료|Dad works for a big company.
+propose|제안하다; 청혼하다|I propose we go to the park.
+entertaining|재미있는, 유쾌한|The show was very entertaining.
+survive|생존하다, 살아남다|Camels can survive without water.
+prey|먹이, 사냥감|The eagle caught its prey.
+society|사회, 집단|We all live in a society.
+sleepover|함께 자며 놀기|I'm having a sleepover at Sam's house.
+kingdom|왕국|The king ruled the kingdom.
+expense|비용|A car is a big expense.
+nearby|가까운, 근처의|Is there a park nearby?
+protective|보호하는|Wear protective glasses.
+argue|논쟁하다, 말다툼하다|My brothers always argue.
+## 23
+check|살피다, 확인하다|Check your answers before you finish.
+ahead|앞에, 앞으로|Look ahead when you ride your bike.
+crush|눌러 부수다; 짝사랑|Crush the garlic with a spoon.
+rank|지위, 계급|He has a high rank in the army.
+blond|금발의|My friend has blond hair.
+confused|헷갈리는, 혼란스러운|I'm confused about this question.
+temperature|온도, 기온|The temperature is 25 degrees.
+attention|주의, 집중|Pay attention in class.
+relate|관련시키다|How does this picture relate to the story?
+schedule|일정; 일정을 정하다|What's on the schedule today?
+rubber|고무|The ball is made of rubber.
+exhibit|전시하다|The museum exhibits dinosaur bones.
+poet|시인|The poet read her poem aloud.
+shelter|피난처, 대피소|We found shelter from the storm.
+shave|면도하다|Dad shaves every morning.
+enemy|적, 경쟁 상대|The cat is the mouse's enemy.
+reason|이유, 근거|What is the reason you were late?
+volunteer|자원봉사자; 자원하다|Mum volunteers at the school canteen.
+underneath|~의 밑에, 아래에|The cat is hiding underneath the bed.
+bless|축복하다|Bless you! (after a sneeze)
+sleeve|소매|My shirt has long sleeves.
+thicken|걸쭉하게 하다, 두껍게 하다|Add flour to thicken the soup.
+beginner|초보자|I'm a beginner at surfing.
+stress|강조하다; 스트레스|The teacher stressed the important words.
+resource|자원, 재원|Water is a precious resource.
+## 24
+nonsense|무의미한 말, 허튼소리|That story is nonsense!
+cart|수레, 카트|Put the food in the shopping cart.
+burst|터지다|The balloon burst.
+reduce|줄이다, 낮추다|We can reduce plastic waste.
+foundation|토대, 기초; 재단|The house has a strong foundation.
+impossible|불가능한|Nothing is impossible!
+recycle|재활용하다|We recycle bottles and cans.
+passage|통로, 복도|A narrow passage led to the garden.
+bore|지루하게 하다|Long speeches bore me.
+harm|피해; 피해를 입히다|Too much sun can harm your skin.
+tan|선탠; 햇볕에 타다|I got a tan at the beach.
+carpenter|목수|The carpenter made a wooden table.
+scratch|긁다; 긁힌 자국|The cat scratched my arm.
+reward|보상|You get a reward for good work.
+flavor|맛, 풍미 (호주: flavour)|What flavor of ice cream do you want?|flavour
+confident|확신하는, 자신감 있는|I feel confident about the test.
+pound|여러 번 치다|My heart pounded with fear.
+destroy|파괴하다|The fire destroyed the forest.
+negative|부정적인|Don't be so negative.
+rainforest|(열대) 우림|Many birds live in the rainforest.
+pregnant|임신한|My aunt is pregnant with twins.
+ashamed|부끄러운, 꺼려지는|I was ashamed of my bad words.
+continue|계속하다, 계속되다|Please continue reading.
+fee|수수료, 요금|There is no entry fee.
+though|(비록) ~이지만|Though it was cold, we swam.
+## 25
+cabin|오두막집|We stayed in a log cabin.
+slit|틈, 구멍|Light came through a slit in the curtain.
+suit|알맞다; (복장이) 어울리다|Blue suits you.
+appear|나타나다, 출현하다|A rainbow appeared in the sky.
+rare|희귀한|This bird is very rare.
+data|자료, 데이터|We collected data about the weather.
+pole|막대, 기둥; 극, 극지|Penguins live near the South Pole.
+ignore|무시하다|Just ignore him.
+nationality|국적|What is your nationality?
+select|선택하다, 선발하다|Select your favourite colour.
+apart|떨어져|Stand one metre apart.
+personal|개인의, 개인적인|A diary is very personal.
+mummy|미라|We saw a mummy at the museum.
+continuous|지속적인|There was continuous rain all day.
+cheat|속이다, 사기 치다|Don't cheat in the game.
+obvious|명백한, 분명한|The answer is obvious.
+perhaps|아마, 어쩌면|Perhaps it will snow.
+record|기록, 최우수 기록|She broke the school record.
+chat|잡담, 수다; 이야기하다|We chatted on the phone.
+claim|주장; 주장하다|He claims he saw a ghost.
+discover|발견하다|We discovered a cave.
+naughty|버릇없는, 말을 안 듣는|The naughty puppy chewed my shoe.
+lung|폐, 허파|You breathe air into your lungs.
+picky|까다로운|My brother is a picky eater.
+scold|야단치다, 꾸짖다|Mum scolded me for being late.
+## 26
+several|몇몇의, 몇 개의|I have several pencils.
+research|연구, 조사|I did research on penguins.
+essential|필수의, 본질적인|Water is essential for life.
+require|필요하다|This game requires two players.
+refuse|거부하다, 거절하다|The cat refused to eat.
+produce|생산하다, 만들어 내다|Cows produce milk.
+location|장소, 위치|What is the location of the party?
+prison|감옥, 교도소|The thief was sent to prison.
+fade|(색이) 바래다; 사라지다|My jeans faded in the wash.
+suitcase|여행 가방|Pack your suitcase for the trip.
+single|단 하나의; 결혼하지 않은|There is not a single cloud in the sky.
+death|죽음, 사망|The death of my fish made me sad.
+slender|날씬한|The giraffe has a slender neck.
+explosion|폭발; 폭발적인 증가|We heard a loud explosion.
+furniture|가구|We bought new furniture for my room.
+project|과제, 프로젝트|I'm working on a science project.
+concern|걱정거리, 우려|Pollution is a big concern.
+stroller|유모차|The baby is sleeping in the stroller.
+digital|디지털 방식의|I have a digital watch.
+sickness|아픔, 질병|Car sickness makes me feel bad.
+curiosity|호기심|Curiosity helps you learn.
+spotless|티 없는, 아주 깨끗한|The kitchen is spotless.
+native|타고난; 토종의|Korean is my native language.
+depend|의지하다; ~에 달려 있다|It depends on the weather.
+fame|명성|The singer found fame at a young age.
+## 27
+seek|찾다, 구하다|We seek help when we are lost.
+positive|긍정적인|Try to stay positive.
+repair|수리; 수리하다|Dad repaired my bike.
+drag|끌다, 끌고 가다|Don't drag your bag on the floor.
+glow|빛나다, 타다|Fireflies glow in the dark.
+strict|엄격한|My teacher is strict but kind.
+risk|위험|Swimming alone is a big risk.
+political|정치의|They talked about political news.
+manner|방식; 예의, 태도|It's good manners to say thank you.
+difference|차이, 다름|What is the difference between these two?
+create|창조하다|Let's create a new game.
+transport|수송하다, 운송하다|Trucks transport food to shops.
+homeless|집 없는, 노숙자의|We gave food to homeless people.
+route|경로, 노선|Which bus route goes to school?
+powerful|강한, 강력한|The lion is a powerful animal.
+crowd|군중, 많은 사람들|A big crowd watched the game.
+refer|언급하다; 참고하다|Refer to page 10 for help.
+natural|자연의|I love the natural beauty of the beach.
+handle|다루다|Handle the eggs carefully.
+rush|서두르다|Don't rush your homework.
+skill|기술, 솜씨|Reading is an important skill.
+unsure|확실치 않은|I'm unsure about the answer.
+regulate|규제하다, 조절하다|Sweat helps regulate your body temperature.
+dump|쓰레기 더미; 버리다|We took old furniture to the dump.
+conclusion|결말; 결론|The conclusion of the story was happy.
+## 28
+edge|가장자리, 모서리|Don't stand near the edge of the cliff.
+wealthy|부유한, 부자인|The wealthy man gave money to the school.
+arrest|체포하다|The police arrested the thief.
+beg|간청하다; 구걸하다|The dog begged for food.
+happiness|행복|Family brings me happiness.
+till|~까지|Wait till I come back.
+stream|개울, 시내; 흐르다|We crossed a small stream.
+result|결과; (결과로서) 생기다|The result of the game was 2 to 1.
+split|나누다, 쪼개다|Let's split the pizza.
+courage|용기|It takes courage to say sorry.
+kindergarten|유치원|My little sister goes to kindergarten.
+certain|확실한; 어떤|Are you certain?
+steep|가파른, 험준한|The hill is very steep.
+poetic|시의, 시적인|Her words were poetic.
+exhausted|기진맥진한, 다 써 버린|I was exhausted after the race.
+unless|만약 ~이 아니면|We will go unless it rains.
+anchor|닻, 정박|The ship dropped its anchor.
+guilty|유죄의; 죄책감이 드는|I felt guilty for eating the last cookie.
+per|~당, ~마다|The tickets are five dollars per person.
+election|선거, 투표|We had a class election.
+complain|불평하다, 항의하다|Don't complain about your dinner.
+protest|항의하다, 시위하다; 항의|People protested in the street.
+century|1세기, 100년|This house is a century old.
+stock|재고품, 저장품|The shop has no stock of this toy.
+delightful|매우 기쁜, 즐거운|We had a delightful picnic.
+## 29
+grand|웅장한|We stayed in a grand hotel.
+toward|~쪽으로|The dog ran toward me.
+exhibition|전시회, 전시|We went to an art exhibition.
+inject|주사하다, 주입하다|The doctor injected medicine into my arm.
+sculptor|조각가|The sculptor made a statue.
+skip|거르다, 빼먹다|Don't skip breakfast.
+careless|부주의한, 경솔한|I made a careless mistake.
+soften|부드러워지다|Butter softens in the sun.
+approve|승인하다, 찬성하다|Mum approved my plan.
+duty|의무, 임무|It's my duty to feed the cat.
+host|주인, 주최자; 주최하다|Brisbane will host the Olympics in 2032.
+evolve|진화하다, 발전하다|Birds evolved from dinosaurs.
+violence|폭력, 폭행|Violence is never okay.
+familiar|익숙한, 친숙한|This song sounds familiar.
+attractive|매력적인|The garden looks attractive.
+scale|규모, 정도|The fire was on a large scale.
+delivery|배달, 배송|The pizza delivery is here.
+thus|그러므로, 따라서|It rained; thus, we stayed inside.
+lunar|달의, 음력의|We celebrate Lunar New Year.
+form|형성하다, 모양을 이루다; 서식|Ice forms when water gets cold.
+title|제목을 붙이다; 제목|What is the title of your story?
+face|향하다; 직면하다|Our house faces the sea.
+outfit|복장, 의상|I love your new outfit.
+melt|녹다, 사라지다|The snowman melted in the sun.
+timid|소심한, 내성적인|The timid rabbit hid in its hole.
+## 30
+proper|적절한|Wear proper shoes for the hike.
+donate|기부하다|We donated old clothes.
+capture|(포로로) 잡다, 포획하다|The police captured the thief.
+automatic|자동의|The doors are automatic.
+row|열, 줄; 배를 젓다|We rowed the boat across the lake.
+fake|가짜의, 거짓인|That is a fake diamond.
+upward|위쪽으로 향한; 위쪽으로|The rocket flew upward.
+jewelry|보석류, 장신구 (호주: jewellery)|Mum keeps her jewelry in a box.|jewellery
+universe|우주, 은하계|The universe is very big.
+priest|성직자, 사제, 신부|The priest spoke at the church.
+tomb|무덤|The king was buried in a tomb.
+dissolve|녹다|Sugar dissolves in water.
+mustache|콧수염 (호주: moustache)|My grandpa has a grey mustache.|moustache
+harvest|수확하다|Farmers harvest wheat in summer.
+disappointed|실망한|I was disappointed when the game was cancelled.
+right|올바른; 권리, 권한|Every child has the right to learn.
+numb|감각이 없는|My fingers are numb from the cold.
+harsh|가혹한, 거친|The desert has a harsh climate.
+sign|서명하다|Please sign your name here.
+dawn|새벽|Birds start singing at dawn.
+exceed|넘어서다|Don't exceed the speed limit.
+frightened|겁먹은, 무서워하는|The frightened kitten hid under the bed.
+chemistry|화학|My sister studies chemistry.
+thorn|가시|Roses have sharp thorns.
+peaceful|평화로운|The lake is quiet and peaceful.
+`;
+/* parent accounts that see the dashboard (the real permission check is in firestore.rules) */
+const ADMINS=((typeof WORDHOP_ADMINS!=="undefined"&&WORDHOP_ADMINS)||["swk810620@gmail.com"]).map(s=>String(s).toLowerCase());
+const LOG_MAX=600;
+
+/* ---------- build the day-by-day course ---------- */
+function parseUnits(txt){const out=[];let u=0;txt.split("\n").forEach(l=>{l=l.trim();if(!l)return;if(l.startsWith("## ")){u=+l.slice(3);return}const p=l.split("|");out.push({w:p[0],m:p[1],ex:p[2],alt:p[3]||"",unit:u})});return out}
+function chunk(words,prefix,level){const out=[];for(let i=0;i<words.length;i+=10){const ws=words.slice(i,i+10);const a=ws[0].unit,b=ws[ws.length-1].unit;
+  out.push({id:prefix+(i/10),level,kind:"book",label:a===b?`Unit ${a}`:`Unit ${a}–${b}`,words:ws})}return out}
+function rng(seed){return()=>{seed=(seed*1664525+1013904223)%4294967296;return seed/4294967296}}
+const L1=chunk(parseUnits(L1_TEXT),"a",1), L2=chunk(parseUnits(L2_TEXT),"b",2);
+const PLANSETS=PLAN.map((d,i)=>({id:"d"+i,level:1,kind:"plan",label:d[0]+" · "+d[1],words:d[2].map(w=>({w:w[0],m:w[1],ex:w[2],alt:""}))}));
+const LEARN=[],COURSE=[];
+(()=>{const r=rng(20261009);const seg=L1.length/PLANSETS.length;const slots=PLANSETS.map((_,k)=>Math.floor(k*seg+r()*seg));
+  L1.forEach((s,i)=>{LEARN.push(s);PLANSETS.forEach((p,k)=>{if(slots[k]===i)LEARN.push(p)})});L2.forEach(s=>LEARN.push(s));
+  LEARN.forEach((s,i)=>s.day=i+1);
+  /* a review test after every 5 study days */
+  LEARN.forEach((s,i)=>{COURSE.push(s);if((i+1)%5===0){const cov=LEARN.slice(i-4,i+1);
+    COURSE.push({id:"r"+((i+1)/5-1),kind:"review",level:s.level,covers:cov,label:`Day ${cov[0].day}–${s.day}`,words:[]})}})})();
+const dayName=s=>s.kind==="review"?"Review":s.kind==="school"?"School":"Day "+s.day;
+const setTitle=s=>s.kind==="review"?"Review · "+s.label:s.kind==="school"?"School · "+s.label:`Day ${s.day} · ${s.label}`;
+
+/* ---------- settings Dad controls (Ian's app only reads these) ---------- */
+const normCtl=d=>{d=d||{};return {msgs:d.msgs||[],startFrom:d.startFrom||0,skip:d.skip||[],reviewOnly:d.reviewOnly||"",wrong:d.wrong||[],school:d.school||[],speakOff:!!d.speakOff,writeOff:!!d.writeOff,learnOff:!!d.learnOff}};
+let control=normCtl();
+const schoolSetsOf=ctl=>ctl.school.map(s=>({id:s.id,kind:"school",level:0,label:s.title,at:s.at,words:(s.words||[]).map(w=>({w:w.w,m:w.m||"",ex:w.ex||"",alt:""}))}));
+const allSetsOf=ctl=>COURSE.concat(schoolSetsOf(ctl));
+const findSet=(id,ctl)=>allSetsOf(ctl||control).find(s=>s.id===id);
+const setById=id=>findSet(id,control);
+
+/* ---------- animals unlocked by stars ---------- */
+const PALS=[["🦘","Kangaroo","Kangaroos can't walk backwards.","캥거루는 뒤로 걸을 수 없어요."],["🐨","Koala","Koalas sleep up to 20 hours a day.","코알라는 하루에 20시간까지 자요."],["🐢","Green Sea Turtle","Turtles come back to the beach where they hatched.","태어난 해변으로 돌아와 알을 낳아요."],["🐠","Clownfish","Clownfish live safely inside sea anemones.","말미잘 속에서 안전하게 살아요."],["🦜","Cockatoo","Cockatoos can live for more than 60 years.","60년 넘게 살 수 있어요."],["🐸","Green Tree Frog","Sticky toes help it climb walls and windows.","끈적한 발가락으로 벽도 올라가요."],["🐧","Little Penguin","The smallest penguin in the world.","세계에서 가장 작은 펭귄이에요."],["🐋","Humpback Whale","Humpback whales sing long songs.","혹등고래는 긴 노래를 불러요."],["🦇","Flying Fox","A big bat that eats fruit and flowers.","과일과 꽃을 먹는 큰 박쥐예요."],["🦎","Frill-necked Lizard","It opens a big frill to scare enemies.","목 주름을 활짝 펴서 적을 겁줘요."],["🐬","Bottlenose Dolphin","Dolphins talk with clicks and whistles.","딸깍 소리와 휘파람으로 대화해요."],["🦢","Black Swan","Most swans are white, but Aussie swans are black.","호주 백조는 까만색이에요."],["🦀","Ghost Crab","It runs sideways very fast on the sand.","모래 위를 옆으로 아주 빨리 달려요."],["🦋","Ulysses Butterfly","Its wings are bright blue.","날개가 밝은 파란색이에요."],["🦭","Australian Sea Lion","It can walk on its flippers.","지느러미발로 걸을 수 있어요."],["🐊","Saltwater Crocodile","The biggest reptile in the world.","세계에서 가장 큰 파충류예요."],["🦉","Powerful Owl","The biggest owl in Australia.","호주에서 가장 큰 올빼미예요."],["🐝","Native Bee","Some Aussie bees don't sting at all.","침을 쏘지 않는 호주 벌도 있어요."],["🐍","Carpet Python","A big snake with no venom.","독이 없는 큰 뱀이에요."],["🦑","Giant Cuttlefish","It can change colour in a second.","순식간에 몸 색깔을 바꿔요."],["🐕","Dingo","Australia's wild dog. It howls more than it barks.","호주의 야생 개, 짖기보다 울부짖어요."],["🐡","Pufferfish","It puffs up like a ball when it is scared.","겁나면 공처럼 부풀어요."],["🦅","Wedge-tailed Eagle","Australia's biggest bird of prey.","호주에서 가장 큰 맹금류예요."],["🐙","Blue-ringed Octopus","Small but very dangerous. Never touch it!","작지만 아주 위험해요. 절대 만지면 안 돼요!"],["🐟","Barramundi","It can live in rivers and in the sea.","강과 바다 모두에서 살 수 있어요."],["🐪","Wild Camel","Australia has more wild camels than any other country.","야생 낙타가 세계에서 가장 많은 나라예요."],["🕷️","Huntsman Spider","Big and hairy, but harmless to people.","크고 털이 많지만 사람에겐 해롭지 않아요."],["🦆","Pacific Black Duck","It puts its head under water to find food.","머리를 물속에 넣어 먹이를 찾아요."],["🐞","Ladybird","Ladybirds eat bugs that hurt plants.","식물을 해치는 벌레를 먹어요."],["🦈","Great White Shark","It can smell food from very far away.","아주 멀리서도 냄새를 맡아요."]];
+const PAL_AT=PALS.map((_,i)=>15*(i+1));
+
+/* ---------- storage ---------- */
+const KEY="ianWordHop.v1";
+const normSt=s=>Object.assign({stars:{},days:{},wrong:{},log:[],cleared:{},seen:[],speak:{},write:{},learn:{}},s||{});
+let saved=normSt({voice:"",rate:0.85});
+try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s)saved=normSt(Object.assign(saved,s))}catch(e){}
+Object.keys(saved.stars).forEach(k=>{
+  if(/^\d+$/.test(k)){saved.stars["d"+k]=Math.max(saved.stars["d"+k]||0,saved.stars[k]);delete saved.stars[k]}
+  else if(/^u\d+$/.test(k)){const u=+k.slice(1),v=saved.stars[k];for(let c=Math.floor(25*u/10);c<=Math.floor((25*u+24)/10);c++)saved.stars["a"+c]=Math.max(saved.stars["a"+c]||0,v);delete saved.stars[k]}
+});
+function persist(){saved.updatedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(e){}cloud.push()}
+
+/* practice progress (speak / write): keep whichever copy is further along for each set */
+function mergeProg(a,b){const o={...(a||{})};const sum=x=>x&&x.done?x.done.reduce((p,c)=>p+c,0)+(x.complete?999:0):-1;Object.entries(b||{}).forEach(([k,v])=>{if(sum(v)>sum(o[k]))o[k]=v});return o}
+
+/* ---------- dates in Brisbane time (Ian's time zone) ---------- */
+const BRIS=new Intl.DateTimeFormat("en-US",{timeZone:"Australia/Brisbane",year:"numeric",month:"2-digit",day:"2-digit",weekday:"short"});
+const brisParts=t=>{const p={};BRIS.formatToParts(new Date(t)).forEach(x=>p[x.type]=x.value);return p};
+const brisDate=t=>{const p=brisParts(t);return p.year+"-"+p.month+"-"+p.day};
+const brisTime=t=>new Date(t).toLocaleString("ko-KR",{timeZone:"Australia/Brisbane",month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit"});
+const KWD=["일","월","화","수","목","금","토"],EWD=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+function ago(t){const m=Math.round((Date.now()-t)/6e4);if(m<1)return "방금";if(m<60)return m+"분 전";const h=Math.round(m/60);if(h<24)return h+"시간 전";return Math.round(h/24)+"일 전"}
+const dur=ms=>{const s=Math.round((ms||0)/1000);return s<60?s+"초":Math.floor(s/60)+"분 "+String(s%60).padStart(2,"0")+"초"};
+
+/* ---------- cloud sync (Firebase Auth + Firestore), used only when a config is filled in ---------- */
+/* Firebase 설정은 같은 폴더의 firebase-config.js 에서 읽어요 */
+var CLOUD_BUILD=true;
+const cloud={user:null,status:"off",timer:null,err:"",unsubCtl:null,
+  ready(){return typeof FIREBASE_CONFIG!=="undefined"&&FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey&&window.firebase},
+  doc(){return firebase.firestore().collection("wordhop").doc(this.user.uid)},
+  data(){const {voice,rate,...rest}=saved;rest.profile={name:this.user.displayName||"",email:this.user.email||""};return rest},
+  withTimeout(p,ms){return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej({code:"timeout"}),ms))])},
+  push(){if(!this.user)return;clearTimeout(this.timer);this.status="saving";this.paint();
+    this.timer=setTimeout(()=>{this.withTimeout(this.doc().set(this.data()),12000).then(()=>{this.status="saved";this.err="";this.paint()}).catch(e=>{console.error("Word Hop save",e);this.status="error";this.err=(e&&(e.code||e.message))||"unknown";this.paint()})},1200)},
+  async pull(){
+    this.status="syncing";this.err="";this.paint();
+    try{const snap=await this.withTimeout(this.doc().get(),12000);
+      if(snap.exists){const r=normSt(snap.data()),local=saved;
+        const newer=(r.updatedAt||0)>(local.updatedAt||0)?r:local;
+        const maxMerge=(a,b)=>{const o={...a};Object.entries(b).forEach(([k,v])=>o[k]=Math.max(o[k]??0,v));return o};
+        const lm=new Map();r.log.concat(local.log).forEach(e=>lm.set(e.t+":"+e.sid,e));
+        saved=normSt(Object.assign({},local,newer,{stars:maxMerge(r.stars,local.stars),days:maxMerge(r.days,local.days),cleared:maxMerge(r.cleared,local.cleared),
+          speak:mergeProg(r.speak,local.speak),write:mergeProg(r.write,local.write),learn:mergeProg(r.learn,local.learn),
+          log:[...lm.values()].sort((a,b)=>a.t-b.t).slice(-LOG_MAX),seen:[...new Set(r.seen.concat(local.seen))],voice:local.voice,rate:local.rate}));
+        delete saved.profile;
+        try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(e){}
+      }
+      await this.withTimeout(this.doc().set(this.data()),12000);this.status="saved";this.watchControl();render();
+    }catch(e){console.error("Word Hop sync",e);this.status="error";this.err=(e&&(e.code||e.message))||"unknown";render()}
+  },
+  watchControl(){if(this.unsubCtl)this.unsubCtl();
+    this.unsubCtl=this.doc().collection("control").doc("main").onSnapshot(s=>{control=normCtl(s.exists?s.data():null);if(view==="home"||view==="zoo")render()},e=>console.warn("Word Hop control",e))},
+  init(){
+    if(!this.ready())return;
+    firebase.initializeApp(FIREBASE_CONFIG);
+    try{firebase.firestore().settings({experimentalAutoDetectLongPolling:true,merge:true})}catch(e){}
+    /* keep the Google login on this device until "로그아웃" (Firebase LOCAL persistence) */
+    try{firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)}catch(e){}
+    /* until Firebase restores the saved login, show "checking" instead of the login button */
+    this.status="checking";render();
+    const giveUp=setTimeout(()=>{if(this.status==="checking"){this.status="signedout";render()}},8000);
+    firebase.auth().onAuthStateChanged(u=>{clearTimeout(giveUp);this.user=u;
+      if(u){if(isAdmin()&&view==="home")view="admin";this.pull()}
+      else{this.status="signedout";if(this.unsubCtl)this.unsubCtl();control=normCtl();adminReset();if(view==="admin")view="home";render()}});
+    window.addEventListener("online",()=>this.push());
+  },
+  signIn(){const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});
+    firebase.auth().signInWithPopup(p).catch(e=>{alertBox("로그인하지 못했어요: "+(e.code||e.message))})},
+  signOut(){firebase.auth().signOut()},
+  label(){return {saving:"☁ 저장 중…",saved:"☁ 저장됨",syncing:"☁ 불러오는 중…",error:"☁ 연결 안 됨 (기기에 저장 중)",signedout:"☁ 로그인 필요",checking:"☁ 로그인 확인 중…"}[this.status]||""},
+  help(){const c=this.err;
+    if(/permission-denied/.test(c))return "Firestore 규칙이 막고 있어요. Firestore → 규칙 탭에 firestore.rules 내용을 붙여넣고 '게시'했는지 확인해 주세요.";
+    if(/not-found|does not exist|NOT_FOUND/i.test(c))return "Firestore 데이터베이스가 아직 없어요. Firebase 콘솔 → Firestore Database → '데이터베이스 만들기'를 해 주세요. 이름은 기본값 (default) 그대로 두세요.";
+    if(/timeout|unavailable|offline/i.test(c))return "Firestore에 연결하지 못했어요. ① Firestore 데이터베이스를 만들었는지 ② 광고 차단·콘텐츠 차단기나 회사 네트워크/VPN이 firestore.googleapis.com을 막고 있지 않은지 확인해 주세요.";
+    return "동기화 오류: "+c;},
+  paint(){const el=document.getElementById("cloudPill");if(el)el.textContent=this.label()}
+};
+function alertBox(msg){const p=document.getElementById("cloudMsg");if(p){p.textContent=msg;p.hidden=false}}
+const isAdmin=()=>!!(cloud.user&&cloud.user.emailVerified!==false&&ADMINS.includes((cloud.user.email||"").toLowerCase()));
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const reEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+function findForm(word,ex){if(!ex)return {form:word,idx:-1};const m=ex.match(new RegExp("\\b("+reEsc(word)+"\\w*)","i"));return m?{form:m[1],idx:m.index}:{form:word,idx:-1}}
+const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const wkey=(sid,w)=>sid+":"+w;
+function toast(m){let el=document.getElementById("toast");if(!el){el=document.createElement("div");el.id="toast";el.className="toast";el.setAttribute("role","status");document.body.appendChild(el)}el.textContent=m;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2400)}
+const STAR='<svg viewBox="0 0 24 24"><path d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.3l-5.8 3.1 1.2-6.5L2.6 9.4l6.5-.8z" fill="FILL" stroke="var(--sun)" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+const starRow=(n,max=3)=>'<span class="stars" aria-label="'+n+' stars">'+Array.from({length:max},(_,i)=>STAR.replace("FILL",i<n?"var(--sun)":"none")).join("")+"</span>";
+const SPK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ROO='<svg viewBox="0 0 64 64"><path d="M14 58c6-1 10-4 12-9l6 1c3 0 6 2 8 6l2 2h6l-3-4c-2-3-2-6-1-9 3-6 2-13-3-17l2-8c1-3 4-5 6-4l-1-4c-3-1-6 1-8 3l-2 2-3-6c-1-2-3-2-4 0l1 7c-4 3-7 8-8 13-2 5-1 9 0 12-5 4-10 9-12 14z" fill="#c98345"/><circle cx="37" cy="13" r="1.6" fill="#16324a"/><path d="M30 34c-2 2-3 5-2 8" stroke="#16324a" stroke-width="1.6" fill="none" stroke-linecap="round"/><ellipse cx="34" cy="38" rx="4" ry="5" fill="#e8b27c"/></svg>';
+const FLAG='<svg viewBox="0 0 26 40"><rect x="2" y="0" width="3" height="40" fill="var(--muted)"/><path d="M5 2h18l-5 6 5 6H5z" fill="var(--coral)"/></svg>';
+
+/* ---------- progress rules (pure, shared by Ian's app and Dad's dashboard) ---------- */
+const bonusOf=ctl=>ctl.msgs.reduce((a,m)=>a+(+m.bonus||0),0);
+const totalStarsFor=(st,ctl)=>allSetsOf(ctl).reduce((a,s)=>a+(st.stars[s.id]||0),0)+bonusOf(ctl);
+const totalStars=()=>totalStarsFor(saved,control);
+const palsOpen=n=>PAL_AT.filter(t=>n>=t).length;
+function nextSetFor(st,ctl){const skip=new Set(ctl.skip);
+  /* a review only counts once Ian has studied at least one of its 5 days (jumping ahead skips empty reviews) */
+  const ok=s=>st.stars[s.id]==null&&!skip.has(s.id)&&(s.kind!=="review"||s.covers.some(c=>st.stars[c.id]!=null));
+  const start=Math.max(0,Math.min(ctl.startFrom||0,COURSE.length-1));
+  return COURSE.find((s,i)=>i>=start&&ok(s))||COURSE.find(ok)||COURSE[COURSE.length-1]}
+const nextSet=()=>nextSetFor(saved,control);
+function wrongListFor(st,ctl){const out=Object.values(st.wrong).map(x=>({...x}));
+  ctl.wrong.forEach(x=>{const k=wkey(x.sid,x.w);if(!st.wrong[k]&&!((st.cleared[k]||0)>x.at)&&!out.some(o=>wkey(o.sid,o.w)===k))out.push({w:x.w,sid:x.sid,n:0,dad:true})});
+  return out.sort((a,b)=>b.n-a.n)}
+const wrongList=()=>wrongListFor(saved,control);
+const isReviewDay=()=>!!control.reviewOnly&&control.reviewOnly===brisDate(Date.now());
+
+/* ---------- sound ---------- */
+let actx;
+function beep(ok){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const notes=ok?[660,880]:[300,220];notes.forEach((f,i)=>{const o=actx.createOscillator(),g=actx.createGain();o.type=ok?"triangle":"sine";o.frequency.value=f;g.gain.setValueAtTime(.0001,actx.currentTime+i*.11);g.gain.exponentialRampToValueAtTime(.18,actx.currentTime+i*.11+.02);g.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+i*.11+.22);o.connect(g).connect(actx.destination);o.start(actx.currentTime+i*.11);o.stop(actx.currentTime+i*.11+.25)})}catch(e){}}
+
+/* ---------- speech (Australian English preferred) ---------- */
+const hasTTS="speechSynthesis" in window;
+let voices=[],voice=null;
+var booted=false;
+function loadVoices(){
+  if(!hasTTS)return;
+  voices=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));
+  const au=v=>/en[-_]AU/i.test(v.lang);
+  voice=voices.find(v=>v.voiceURI===saved.voice)||voices.find(v=>au(v)&&/natural|premium|enhanced/i.test(v.name))||voices.find(au)||voices.find(v=>/en[-_]GB/i.test(v.lang))||voices[0]||null;
+  if(booted&&view==="home")render();
+}
+if(hasTTS){speechSynthesis.onvoiceschanged=()=>loadVoices()}
+function speak(text,onend,onHeard){/* onHeard fires only when the audio really played to the end */
+  if(!hasTTS||!text){onHeard&&onHeard();onend&&onend();return}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang=voice?voice.lang:"en-AU"; if(voice)u.voice=voice; u.rate=saved.rate;
+  u.onend=()=>{onHeard&&onHeard();onend&&onend()};u.onerror=()=>{onend&&onend()};
+  speechSynthesis.speak(u);
+}
+function stopSpeak(){if(hasTTS)speechSynthesis.cancel();readingAll=false;if(typeof SP!=="undefined"&&SP.rec){try{SP.rec.abort()}catch(e){}SP.rec=null;SP.listening=false}}
+
+/* ---------- confetti ---------- */
+function confetti(){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  const c=$("#fx"),x=c.getContext("2d");c.width=innerWidth;c.height=innerHeight;
+  const cols=["#f6b41e","#24876a","#1d6fc2","#d9483d","#7cc7ff"];
+  const p=Array.from({length:140},()=>({x:Math.random()*c.width,y:-20-Math.random()*c.height*.5,vx:(Math.random()-.5)*3,vy:2+Math.random()*3,r:Math.random()*6.3,s:5+Math.random()*6,c:cols[Math.floor(Math.random()*5)]}));
+  let t=0;(function f(){x.clearRect(0,0,c.width,c.height);p.forEach(q=>{q.x+=q.vx;q.y+=q.vy;q.r+=.1;x.save();x.translate(q.x,q.y);x.rotate(q.r);x.fillStyle=q.c;x.fillRect(-q.s/2,-q.s/4,q.s,q.s/2);x.restore()});if(++t<200)requestAnimationFrame(f);else x.clearRect(0,0,c.width,c.height)})();
+}
+
+/* ---------- state ---------- */
+let view="home",setId=null,mode="study",readingAll=false,T=null,lastView="";
+const app=$("#app");
+function render(){
+  if(lastView!==view+mode+setId){stopSpeak();lastView=view+mode+setId}
+  if(view==="admin"&&isAdmin())renderAdmin();
+  else{if(view==="admin")view="home";if(view==="home")renderHome();else if(view==="zoo")renderZoo();else renderDay()}
+  const ta=$("#toAdmin");if(ta)ta.onclick=()=>{view="admin";render();scrollTo(0,0)};
+}
+function go(v,id,m){view=v;setId=id??null;if(m)mode=m;T=null;render();scrollTo(0,0)}
+const header=back=>`<header class="top">
+  ${back?'<button class="btn ghost" id="back">← Home</button>':`<div class="brand"><div style="width:52px;height:52px">${ROO}</div><div><h1>Ian's Word Hop</h1><small>하루 10단어 · Day 1–${LEARN.length} · 5일마다 복습</small></div></div>`}
+  <div class="pills">${isAdmin()?'<button class="btn ghost" id="toAdmin">Parent dashboard</button>':""}${cloud.ready()?`<span class="pill cloud" id="cloudPill">${cloud.label()}</span>`:""}<span class="pill">${starRow(1,1)} ${totalStars()}</span></div></header>`;
+function accountHTML(){
+  if(!cloud.ready()){
+    if(typeof CLOUD_BUILD==="undefined")return "";
+    const why=!window.firebase?"Firebase 프로그램을 불러오지 못했어요. 인터넷 연결이나 광고 차단기를 확인해 주세요."
+      :typeof FIREBASE_CONFIG==="undefined"?"<b>firebase-config.js</b> 파일을 찾지 못했어요. GitHub에서 index.html과 <b>같은 폴더</b>에 firebase-config.js가 있는지 확인해 주세요."
+      :"<b>firebase-config.js</b> 파일이 비어 있어요. Firebase 콘솔 → 프로젝트 설정 → 내 앱의 firebaseConfig 값(apiKey, authDomain, projectId, appId)을 넣어 주세요.";
+    return `<section class="panel signin"><h3>로그인 설정이 필요해요</h3><p class="note">${why}</p><p class="note">지금은 기록이 이 기기에만 저장돼요.</p></section>`;
+  }
+  if(cloud.status==="checking")return "";
+  if(!cloud.user)return `<section class="panel signin"><h3>기록을 클라우드에 저장하기</h3>
+    <p class="note">Google 계정으로 로그인하면 별, 진도, 오답 노트가 저장돼요. 다른 기기에서도 같은 계정으로 로그인하면 이어서 할 수 있어요.</p>
+    <div class="row"><button class="btn" id="signin">Google로 로그인</button></div><p class="note" id="cloudMsg" hidden></p></section>`;
+  if(cloud.status==="error")return `<section class="panel signin"><h3>클라우드에 연결하지 못했어요</h3>
+    <p class="note">${esc(cloud.help())}</p><p class="note">오류 코드: <code>${esc(cloud.err)}</code> · 기록은 이 기기에 계속 저장되고 있어요.</p>
+    <div class="row"><button class="btn" id="retrySync">다시 연결</button></div></section>`;
+  return "";
+}
+
+/* ---------- home ---------- */
+function renderHome(){
+  const nx=nextSet(),done=COURSE.filter(s=>saved.stars[s.id]!=null).length;
+  const daysDone=LEARN.filter(s=>saved.stars[s.id]!=null).length;
+  const stars=totalStars(),open=palsOpen(stars),nextAt=PAL_AT[open];
+  const wl=wrongList();
+  const revDay=isReviewDay()&&(wl.length>0||daysDone>0);
+  const isRev=!revDay&&nx.kind==="review";
+  const unseen=control.msgs.filter(m=>!saved.seen.includes(m.id)).sort((a,b)=>b.t-a.t);
+  const sch=schoolSetsOf(control);
+  const voiceOpts=voices.map(v=>`<option value="${esc(v.voiceURI)}"${voice&&v.voiceURI===voice.voiceURI?" selected":""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("");
+  const isAU=voice&&/en[-_]AU/i.test(voice.lang);
+  const tile=s=>`<button class="day${s.kind==="plan"?" plan":""}${s.kind==="review"?" review":""}${s.kind==="school"?" school":""}${saved.stars[s.id]!=null?" done":""}${s===nx&&!revDay?" next":""}" data-set="${s.id}"><span class="n">${dayName(s)}</span><span class="t">${esc(s.label)}</span>${starRow(saved.stars[s.id]||0)}</button>`;
+  const lv=n=>COURSE.filter(s=>s.level===n);
+  const lvDone=n=>lv(n).filter(s=>saved.stars[s.id]!=null).length;
+  const todayCard=revDay?`
+      <div class="eyebrow">Review day · 오늘은 복습하는 날</div>
+      <h2>${wl.length?"Tricky words":"Mix test"}</h2>
+      <p>아빠가 오늘은 새 단어 대신 복습을 하자고 했어요.</p>
+      <div class="bar"><i style="width:${(daysDone/LEARN.length*100).toFixed(1)}%"></i></div>
+      <div class="row"><button class="btn green big" id="start">Start review</button><span class="note">${daysDone} / ${LEARN.length} days done</span></div>`:`
+      <div class="eyebrow">${isRev?"Review time · 복습 시험":"Today's words · 오늘의 단어"}</div>
+      <h2>${dayName(nx)} · ${esc(nx.label)}</h2>
+      <p>${isRev?"지난 5일 단어 중 오답 노트 단어 위주로 10문제":nx.words.slice(0,4).map(w=>esc(w.w)).join(", ")+" …"}</p>
+      <div class="bar" aria-label="${daysDone} of ${LEARN.length} days"><i style="width:${(daysDone/LEARN.length*100).toFixed(1)}%"></i></div>
+      <div class="row"><button class="btn green big" id="start">Start ${dayName(nx)}</button><span class="note">${daysDone} / ${LEARN.length} days done</span></div>`;
+  app.innerHTML=header(false)+accountHTML()+(unseen.length?`
+  <section class="dadmsg" aria-live="polite"><div class="e">📬</div><div style="min-width:0">
+    <div class="k">Message from Dad${unseen.length>1?` · 1 of ${unseen.length}`:""}</div>
+    <p>${esc(unseen[0].text)}</p>${unseen[0].bonus?`<p class="bonus">+${+unseen[0].bonus} ★ bonus stars!</p>`:""}
+    <button class="btn sun" id="msgOk">Thanks, Dad!</button></div></section>`:"")+`
+  <section class="today">
+    <div class="roo-big" style="width:72px;height:72px">${ROO}</div>
+    <div>${todayCard}</div>
+  </section>
+  <div class="cards3">
+    <section class="panel">
+      <h3>Aussie Animal Zoo</h3>
+      <div class="zoo-strip">${PALS.slice(0,Math.max(open+1,6)).slice(0,10).map((p,i)=>`<span class="${i<open?"":"lock"}">${p[0]}</span>`).join("")}</div>
+      <p class="note">${open} / ${PALS.length} animals. ${nextAt?`Next friend at ${nextAt} ★ (${nextAt-stars} more)`:"You found them all!"}</p>
+      <button class="btn ghost" id="zoo">Open the zoo</button>
+    </section>
+    <section class="panel">
+      <h3>Tricky words · 오답 노트</h3>
+      ${wl.length?`<div class="chips">${wl.slice(0,12).map(x=>`<span>${esc(x.w)}<small>${x.dad?"Dad":"×"+x.n}</small></span>`).join("")}</div>
+      <p class="note">${wl.length}개. 다시 시험에서 맞히면 노트에서 빠져요.</p>
+      <button class="btn sun" id="tricky">Practise tricky words</button>`
+      :'<p class="note">시험에서 틀린 단어가 여기에 모여요. 아직 없어요!</p>'}
+    </section>
+  </div>
+  ${sch.length?`<details class="level" open><summary>School words <span>아빠가 넣은 학교 단어 · ${sch.filter(s=>saved.stars[s.id]!=null).length}/${sch.length}</span></summary><div class="days">${sch.slice().reverse().map(tile).join("")}</div></details>`:""}
+  <details class="level"${nx.level===1?" open":""}><summary>Level 1 <span>Units 1–30 + 15-Day words · ${lvDone(1)}/${lv(1).length}</span></summary><div class="days">${lv(1).map(tile).join("")}</div></details>
+  <details class="level"${nx.level===2?" open":""}><summary>Level 2 <span>Bricks 3100 · ${lvDone(2)}/${lv(2).length}</span></summary><div class="days">${lv(2).map(tile).join("")}</div></details>
+  <div class="row"><button class="btn ghost" id="mix"${done?"":" disabled"}>Mix test · 공부한 단어 섞어서 10문제</button></div>
+  <details class="panel settings"><summary>Voice settings</summary>
+    ${hasTTS?`<label>읽어주는 목소리<select id="voice">${voiceOpts||"<option>Loading voices…</option>"}</select></label>
+    <label>Speed: <span id="rateV">${saved.rate.toFixed(2)}</span>x<input type="range" id="rate" min="0.6" max="1.1" step="0.05" value="${saved.rate}"></label>
+    <div class="row"><button class="btn ghost" id="tryV">${SPK} Test voice</button></div>
+    <p class="note">${isAU?"호주 영어 목소리로 읽어요.":"이 기기에 호주 영어(en-AU) 목소리가 없으면 다른 영어 목소리로 읽어요. iPad·iPhone은 설정 → 손쉬운 사용 → 읽기 및 말하기 → 음성 → 영어 → 호주(Karen, Lee 등)를 내려받으면 선택할 수 있어요."}</p>`
+    :'<p class="note">이 브라우저는 읽어주기를 지원하지 않아요. Chrome이나 Safari에서 열어 주세요.</p>'}
+  </details>
+  ${cloud.user?`<details class="panel settings"><summary>Account</summary><p class="note">${esc(cloud.user.email||cloud.user.displayName||"")} 계정에 저장 중이에요.</p><div class="row"><button class="btn ghost" id="signout">로그아웃</button></div></details>`:""}`;
+  const si=$("#signin");if(si)si.onclick=()=>cloud.signIn();
+  const rs=$("#retrySync");if(rs)rs.onclick=()=>cloud.pull();
+  const so=$("#signout");if(so)so.onclick=()=>cloud.signOut();
+  const mo=$("#msgOk");if(mo)mo.onclick=()=>{const m=unseen[0];saved.seen.push(m.id);persist();if(m.bonus){confetti();speak(`You got ${m.bonus} bonus stars!`)}renderHome()};
+  $("#start").onclick=()=>revDay?go("day",wl.length?"tricky":"mix","test"):go("day",nx.id,isRev?"test":"study");
+  $("#zoo").onclick=()=>go("zoo");
+  const tr=$("#tricky");if(tr)tr.onclick=()=>go("day","tricky","test");
+  app.querySelectorAll("[data-set]").forEach(b=>b.onclick=()=>go("day",b.dataset.set,b.dataset.set[0]==="r"?"test":"study"));
+  const mix=$("#mix");if(mix)mix.onclick=()=>go("day","mix","test");
+  const vs=$("#voice");if(vs)vs.onchange=()=>{saved.voice=vs.value;persist();voice=voices.find(v=>v.voiceURI===vs.value)||voice;renderHome()};
+  const r=$("#rate");if(r)r.oninput=()=>{saved.rate=+r.value;$("#rateV").textContent=saved.rate.toFixed(2);persist()};
+  const tv=$("#tryV");if(tv)tv.onclick=()=>speak("G'day Ian! Let's learn some new words today.");
+}
+
+/* ---------- zoo ---------- */
+function renderZoo(){
+  const stars=totalStars(),open=palsOpen(stars);
+  app.innerHTML=header(true)+`
+  <section class="panel"><h2 style="font-size:28px">Aussie Animal Zoo</h2><p class="note">별 15개마다 호주 동물 친구가 한 마리씩 와요. ${open} / ${PALS.length}</p></section>
+  <div class="zoo">${PALS.map((p,i)=>i<open?`<article class="pal"><div class="e">${p[0]}</div><h4>${esc(p[1])}</h4><p>${esc(p[2])}</p><p>${esc(p[3])}</p><button class="icon-btn" data-say="${i}" aria-label="Hear about the ${esc(p[1])}">${SPK}</button></article>`
+    :`<article class="pal locked"><div class="e">${p[0]}</div><h4>???</h4><p>${PAL_AT[i]} ★ needed</p></article>`).join("")}</div>`;
+  $("#back").onclick=()=>go("home");
+  app.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>{const p=PALS[+b.dataset.say];speak(p[1]+". "+p[2])});
+}
+
+/* ---------- day view ---------- */
+function renderDay(){
+  const s=setById(setId);
+  const special={mix:"Mix test",tricky:"Tricky words"}[setId]||(s&&s.kind==="review"?setTitle(s):"");
+  if(!special&&!s){go("home");return}
+  const title=special||setTitle(s);
+  if(special)mode="test";
+  const lOk=!!special||learnDone(setId),wOk=!!special||writeDone(setId),sOk=!!special||speakDone(setId),unlocked=lOk&&wOk&&sOk;
+  const firstOpen=!lOk?"study":!wOk?"write":!sOk?"speak":"test";
+  if(mode==="write"&&!lOk)mode="study";
+  if(mode==="speak"&&!(lOk&&wOk))mode=firstOpen;
+  if(mode==="test"&&!unlocked)mode=firstOpen;
+  const steps=[["study","Learn",true,lOk&&!control.learnOff&&!!s&&s.kind!=="review"&&saved.stars[setId]==null]];
+  if(!control.writeOff)steps.push(["write","Write",lOk,wOk]);
+  if(!control.speakOff)steps.push(["speak","Speak",lOk&&wOk,sOk]);
+  steps.push(["test","Test",unlocked,false]);
+  app.innerHTML=header(true)+`
+  <h2 style="font-size:28px">${esc(title)}</h2>
+  ${special?"":`<div class="tabs${steps.length>3?" four":""}" role="tablist">${steps.map(([m,l,open,done],k)=>`<button role="tab" aria-selected="${mode===m}" data-m="${m}"${open?"":' class="locked"'}>${k+1} · ${l}${done?" ✓":open?"":" 🔒"}</button>`).join("")}</div>`}
+  <div id="pane"></div>`;
+  $("#back").onclick=()=>go("home");
+  app.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{
+    const m=b.dataset.m,open=steps.find(x=>x[0]===m)[2];
+    if(!open){toast(firstOpen==="study"?"먼저 Learn에서 카드를 모두 듣고 짝 맞추기를 끝내요!":firstOpen==="write"?`먼저 Write에서 단어를 ${WRITE_ROUNDS}번씩 써 봐요!`:`먼저 Speak에서 예문을 ${SPEAK_ROUNDS}번씩 따라 말해요!`);mode=firstOpen}else mode=m;
+    stopSpeak();T=null;renderDay()});
+  if(mode==="study")renderStudy();else if(mode==="write")renderWrite();else if(mode==="speak")renderSpeak();else renderTest();
+}
+/* ---------- Learn: hear every card (word + sentence), then match words to meanings ---------- */
+function learnState(id){const n=setById(id).words.length;let s=saved.learn[id];
+  if(!s||!s.done||s.done.length!==n)s=saved.learn[id]={done:Array(n).fill(0),w:Array(n).fill(false),e:Array(n).fill(false),complete:false};return s}
+function learnDone(id){const s=setById(id);if(!s||s.kind==="review"||control.learnOff||saved.stars[id]!=null)return true;const st=saved.learn[id];return !!(st&&st.complete)}
+const cleanMeaning=m=>(m||"").replace(/\s*\(호주:[^)]*\)/,"");
+let MG=null;/* match-game state for the open set */
+function nextStepLabel(){return !learnDone(setId)?"카드를 모두 듣고 짝 맞추기를 끝내면 열려요":!writeDone(setId)?"Next: Write ✍️ →":!speakDone(setId)?"Next: Speak 🎤 →":"Ready? Take the test →"}
+function renderStudy(){
+  const ws=setById(setId).words,gated=!learnDone(setId)||(saved.learn[setId]&&saved.learn[setId].complete);
+  const st=gated?learnState(setId):null;
+  const heardN=st?st.done.filter(Boolean).length:ws.length;
+  $("#pane").innerHTML=`
+  <div class="learnbar"><button class="btn green" id="readAll">${SPK}<span>Read all ${ws.length}</span></button><span class="note" id="learnNote">${st&&!st.complete?`① 카드를 모두 들어 보세요 <b>${heardN} / ${ws.length}</b> → ② 뜻 짝 맞추기`:"단어 → 예문 순서로 읽어요. 따라 말해 보세요!"}</span></div>
+  <div class="list">${ws.map((x,i)=>{const f=findForm(x.w,x.ex);const ex=f.idx>=0?esc(x.ex.slice(0,f.idx))+"<b>"+esc(f.form)+"</b>"+esc(x.ex.slice(f.idx+f.form.length)):esc(x.ex);
+    return `<article class="wcard${st&&st.done[i]?" heard":""}" id="c${i}"><div><div class="w">${esc(x.w)}</div><div class="m">${esc(x.m)}</div></div>
+    <div><button class="icon-btn" data-sw="${i}" aria-label="Say ${esc(x.w)}">${SPK}</button></div>
+    ${x.ex?`<p class="ex">${ex} <button class="icon-btn" style="width:40px;height:40px;vertical-align:middle;margin-left:4px" data-se="${i}" aria-label="Read sentence">${SPK}</button></p>`:""}</article>`}).join("")}</div>
+  <div id="matchArea"></div>
+  <div class="row" style="margin-top:16px"><button class="btn" id="goTest"${learnDone(setId)?"":" disabled"}>${nextStepLabel()}</button></div>`;
+  const heard=(i,part)=>{if(!st||st.complete)return;if(part==="w")st.w[i]=true;else st.e[i]=true;
+    const was=st.done[i];st.done[i]=st.w[i]&&(st.e[i]||!ws[i].ex)?1:0;
+    if(st.done[i]&&!was){persist();const c=$("#c"+i);if(c)c.classList.add("heard");
+      const n=st.done.filter(Boolean).length,ln=$("#learnNote");if(ln)ln.innerHTML=`① 카드를 모두 들어 보세요 <b>${n} / ${ws.length}</b> → ② 뜻 짝 맞추기`;
+      if(n===ws.length)renderMatch()}};
+  app.querySelectorAll("[data-sw]").forEach(b=>b.onclick=()=>{readingAll=false;clearPlaying();const i=+b.dataset.sw;speak(ws[i].w,null,()=>heard(i,"w"))});
+  app.querySelectorAll("[data-se]").forEach(b=>b.onclick=()=>{readingAll=false;clearPlaying();const i=+b.dataset.se;speak(ws[i].ex,null,()=>heard(i,"e"))});
+  $("#goTest").onclick=()=>{if(!learnDone(setId))return;stopSpeak();mode=!writeDone(setId)?"write":!speakDone(setId)?"speak":"test";T=null;renderDay();scrollTo(0,0)};
+  $("#readAll").onclick=()=>{
+    if(readingAll){stopSpeak();clearPlaying();return}
+    readingAll=true;let i=0;
+    const step=()=>{clearPlaying();if(!readingAll||i>=ws.length){readingAll=false;return}
+      const c=$("#c"+i);if(!c){readingAll=false;return}c.classList.add("playing");c.scrollIntoView({block:"nearest",behavior:"smooth"});
+      const k=i++,x=ws[k];speak(x.w,()=>{if(!readingAll)return;setTimeout(()=>x.ex?speak(x.ex,()=>setTimeout(step,500),()=>heard(k,"e")):setTimeout(step,500),350)},()=>heard(k,"w"))};
+    step();
+  };
+  if(st)renderMatch();
+}
+function renderMatch(){
+  const area=$("#matchArea");if(!area)return;
+  const ws=setById(setId).words,st=saved.learn[setId];
+  if(!st){area.innerHTML="";return}
+  const n=ws.length,heardN=st.done.filter(Boolean).length;
+  if(st.complete){area.innerHTML=`<section class="panel match done"><h3>🎯 Match game ✓</h3><p class="note">뜻 짝 맞추기를 끝냈어요! 이제 다음 단계로 가요.</p></section>`;return}
+  if(heardN<n){area.innerHTML=`<section class="panel match locked"><h3>🎯 Match game 🔒</h3><p class="note">카드 ${n}장을 모두 들으면(단어 🔊와 예문 🔊) 짝 맞추기 게임이 열려요. 지금 ${heardN} / ${n}</p></section>`;return}
+  if(!MG||MG.sid!==setId){const idx=ws.map((_,i)=>i);MG={sid:setId,L:shuffle(idx),R:shuffle(idx),okW:new Set(),okM:new Set(),sel:null,miss:{},start:Date.now()}}
+  area.innerHTML=`<section class="panel match"><h3>🎯 Match game</h3><p class="note">영어 단어와 뜻을 하나씩 눌러 짝지어요. ${MG.okW.size} / ${n}</p>
+    <div class="mgrid"><div class="mcol">${MG.L.map(i=>`<button class="mt mw${MG.okW.has(i)?" ok":""}${MG.sel&&MG.sel.side==="w"&&MG.sel.i===i?" sel":""}" data-mw="${i}"${MG.okW.has(i)?" disabled":""}>${esc(ws[i].w)}</button>`).join("")}</div>
+    <div class="mcol">${MG.R.map(j=>`<button class="mt mm${MG.okM.has(j)?" ok":""}${MG.sel&&MG.sel.side==="m"&&MG.sel.i===j?" sel":""}" data-mm="${j}"${MG.okM.has(j)?" disabled":""}>${esc(cleanMeaning(ws[j].m))}</button>`).join("")}</div></div></section>`;
+  const pick=(side,i,btn)=>{
+    if(!MG.sel||MG.sel.side===side){MG.sel={side,i};if(side==="w")speak(ws[i].w);renderMatch();return}
+    const wi=side==="w"?i:MG.sel.i,mj=side==="m"?i:MG.sel.i;MG.sel=null;
+    if(cleanMeaning(ws[wi].m)===cleanMeaning(ws[mj].m)){beep(true);MG.okW.add(wi);MG.okM.add(mj);speak(ws[wi].w);
+      if(MG.okW.size===n)finishMatch();else renderMatch()}
+    else{beep(false);const arr=MG.miss[wi]=MG.miss[wi]||[];const t=cleanMeaning(ws[mj].m).slice(0,30);if(!arr.includes(t))arr.push(t);
+      renderMatch();app.querySelectorAll(`[data-mw="${wi}"],[data-mm="${mj}"]`).forEach(el=>{el.classList.add("bad");setTimeout(()=>el.classList.remove("bad"),450)})}
+  };
+  area.querySelectorAll("[data-mw]").forEach(b=>b.onclick=()=>pick("w",+b.dataset.mw,b));
+  area.querySelectorAll("[data-mm]").forEach(b=>b.onclick=()=>pick("m",+b.dataset.mm,b));
+}
+function finishMatch(){
+  const cur=setById(setId),ws=cur.words,st=saved.learn[setId];st.complete=true;
+  const missIdx=Object.keys(MG.miss).map(Number);
+  saved.log.push({t:Date.now(),sid:setId,kind:"learn",label:setTitle(cur),n:ws.length,score:ws.length-missIdx.length,ms:Date.now()-MG.start,first:true,
+    miss:missIdx.map(i=>({w:ws[i].w,sid:setId,typed:MG.miss[i].slice(0,3)}))});
+  if(saved.log.length>LOG_MAX)saved.log=saved.log.slice(-LOG_MAX);
+  persist();confetti();speak("Great matching!");MG=null;
+  setTimeout(()=>{if(view==="day"&&mode==="study")renderDay()},900);
+}
+function clearPlaying(){app.querySelectorAll(".wcard.playing").forEach(c=>c.classList.remove("playing"))}
+
+
+/* ---------- writing practice: Look, Say, Cover, Write, Check — each word 3 times from memory ---------- */
+const WRITE_ROUNDS=2;
+const WP={idx:-1,phase:"look",tries:0,said:""};
+function writeState(id){const n=setById(id).words.length;let s=saved.write[id];
+  if(!s||!s.done||s.done.length!==n)s=saved.write[id]={done:Array(n).fill(0),first:Array(n).fill(0),miss:{},start:Date.now(),complete:false};
+  s.miss=s.miss||{};return s}
+function writeDone(id){const s=setById(id);if(!s||s.kind==="review"||control.writeOff||saved.stars[id]!=null)return true;const st=saved.write[id];return !!(st&&st.complete)}
+function nextWriteIdx(st){for(let r=1;r<=WRITE_ROUNDS;r++){const i=st.done.findIndex(d=>d<r);if(i>=0)return {i,round:r}}return null}
+const normW=v=>String(v||"").toLowerCase().replace(/[’‘]/g,"'").replace(/[^a-z' -]/g,"").replace(/\s+/g," ").trim();
+function letterDiff(target,typed){/* colour the letters of the right spelling: green = Ian had it, red = missed */
+  const a=[...target],b=[...normW(typed)],n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i].toLowerCase()===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+  const ok=Array(n).fill(false);let i=0,j=0;while(i<n&&j<m){if(a[i].toLowerCase()===b[j]){ok[i]=true;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}
+  return a.map((c,k)=>`<span class="${ok[k]?"l-ok":"l-bad"}">${esc(c)}</span>`).join("");
+}
+function finishWrite(st){
+  if(st.complete)return;st.complete=true;
+  const cur=setById(setId),ws=cur.words;
+  saved.log.push({t:Date.now(),sid:setId,kind:"write",label:setTitle(cur),n:ws.length*WRITE_ROUNDS,score:st.first.reduce((a,b)=>a+b,0),ms:Date.now()-(st.start||Date.now()),first:!st.again,
+    miss:ws.map((x,i)=>({w:x.w,sid:setId,typed:(st.miss[i]||[]).slice(0,3)})).filter(m=>m.typed.length)});
+  if(saved.log.length>LOG_MAX)saved.log=saved.log.slice(-LOG_MAX);
+  confetti();
+}
+function renderWrite(){
+  const set=setById(setId),ws=set.words,st=writeState(setId);
+  if(st.complete){
+    const firstOk=st.first.reduce((a,b)=>a+b,0),tricky=ws.filter((_,i)=>(st.miss[i]||[]).length);
+    const nextLbl=speakDone(setId)?"Take the test →":"Next: Speak 🎤 →";
+    $("#pane").innerHTML=`<section class="result"><div style="width:80px;height:80px">${ROO}</div>
+      <h3 style="font-size:26px">Great writing, Ian!</h3><p class="note">단어 ${ws.length}개를 ${WRITE_ROUNDS}번씩 기억해서 썼어요. 한 번에 맞힌 횟수 ${firstOk} / ${ws.length*WRITE_ROUNDS}</p>
+      ${tricky.length?`<p class="note">헷갈렸던 단어</p><div class="miss">${tricky.map(x=>`<span>${esc(x.w)}</span>`).join("")}</div>`:""}
+      <div class="row" style="justify-content:center"><button class="btn green big" id="wrNext">${nextLbl}</button><button class="btn ghost" id="wrAgain">한 번 더 연습</button></div></section>`;
+    $("#wrNext").onclick=()=>{mode=speakDone(setId)?"test":"speak";T=null;renderDay();scrollTo(0,0)};
+    $("#wrAgain").onclick=()=>{st.done=st.done.map(()=>0);st.first=st.first.map(()=>0);st.complete=false;st.again=true;st.start=Date.now();WP.idx=-1;persist();renderDay()};
+    return;
+  }
+  const nx=nextWriteIdx(st);
+  if(!nx){finishWrite(st);persist();renderDay();return}
+  const i=nx.i,round=nx.round,x=ws[i],key=i+":"+round;
+  if(WP.idx!==key){WP.idx=key;WP.phase="look";WP.tries=0}
+  const total=st.done.reduce((a,b)=>a+Math.min(b,WRITE_ROUNDS),0);
+  const meaning=esc((x.m||"").replace(/\s*\(호주:[^)]*\)/,""));
+  const f=findForm(x.w,x.ex||"");
+  const sentBlank=x.ex&&f.idx>=0?esc(x.ex.slice(0,f.idx))+'<span class="blank">______</span>'+esc(x.ex.slice(f.idx+f.form.length)):"";
+  const sentShown=x.ex?(f.idx>=0?esc(x.ex.slice(0,f.idx))+"<b>"+esc(f.form)+"</b>"+esc(x.ex.slice(f.idx+f.form.length)):esc(x.ex)):"";
+  const steps=["Look","Say","Cover","Write","Check"],stepOn={look:1,write:4,check:5}[WP.phase];
+  const fit=`style="font-size:${Math.max(26,Math.min(52,Math.floor(290/(x.w.length*.6))))}px"`;
+  let body="";
+  if(WP.phase==="look")body=`
+    <div class="wbig" ${fit} aria-live="polite">${esc(x.w)}</div>
+    <p class="wmean">${meaning}</p>${sentShown?`<p class="note wsent">${sentShown}</p>`:""}
+    <p class="feedback">${WP.tries?"한 번 더 잘 보고, 소리 내어 읽어 봐요.":"잘 보고, 소리 내어 읽어 봐요. 다 외웠으면 가리기!"}</p>
+    <div class="spbtns"><button class="btn ghost" id="wrSay">${SPK}<span>Say</span></button><button class="btn green big mic" id="wrCover">🙈 <span>Cover &amp; write</span></button></div>`;
+  else if(WP.phase==="write")body=`
+    <div class="wcover" aria-label="The word is covered">🙈 <span>The word is covered</span></div>
+    <p class="wmean">${meaning}</p>${sentBlank?`<p class="note wsent">${sentBlank}</p>`:""}
+    <input class="writebox" id="wrIn" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="Apple Pencil로 여기에 써요 ✍️" aria-label="Write the word">
+    <div class="spbtns"><button class="btn ghost" id="wrPeek">👀 <span>Look again</span></button><button class="btn big mic" id="wrCheck">✓ <span>Check</span></button></div>
+    <p class="note">Apple Pencil로 칸 안에 쓰면 글자로 바뀌어요. (iPad 설정 → Apple Pencil → 손글씨 입력(Scribble) 켜기)</p>`;
+  else body=WP.result;
+  $("#pane").innerHTML=`
+  <section class="qcard speak write">
+    <div class="qmeta"><span>Round ${round} / ${WRITE_ROUNDS} · Word ${i+1} / ${ws.length}</span><span>${total} / ${ws.length*WRITE_ROUNDS}</span></div>
+    <div class="sdots" style="grid-template-columns:repeat(${ws.length},1fr)" aria-hidden="true">${Array.from({length:WRITE_ROUNDS},(_,q)=>q+1).map(r=>ws.map((_,k)=>`<i class="${st.done[k]>=r?"on":""}${k===i&&r===round?" cur":""}"></i>`).join("")).join("")}</div>
+    <ol class="lscwc" aria-label="Look, Say, Cover, Write, Check">${steps.map((t,k)=>`<li class="${k+1<stepOn||(stepOn===1&&k===1&&WP.said===key)?"done":""}${k+1===stepOn?" on":""}">${t}</li>`).join("")}</ol>
+    ${body}
+  </section>`;
+  if(WP.phase==="look"){
+    const say=()=>{WP.said=key;speak(x.w);const li=app.querySelectorAll(".lscwc li")[1];if(li)li.classList.add("done")};
+    $("#wrSay").onclick=say;
+    if(WP.autoSaid!==key+":"+WP.tries){WP.autoSaid=key+":"+WP.tries;setTimeout(()=>{if(WP.idx===key&&WP.phase==="look")say()},300)}
+    $("#wrCover").onclick=()=>{stopSpeak();WP.phase="write";renderWrite()};
+  }else if(WP.phase==="write"){
+    const inp=$("#wrIn");
+    const check=()=>{
+      const v=inp.value;if(!normW(v)){toast("먼저 단어를 써 주세요 ✍️");return}
+      const ok=[x.w,x.alt].filter(Boolean).map(normW).includes(normW(v));
+      if(ok){
+        beep(true);if(!WP.tries)st.first[i]++;st.done[i]++;
+        WP.result=`<div class="wbig ok" ${fit}>${esc(x.w)}</div><p class="feedback ok">${["Spot on!","Perfect spelling!","You got it!","Ripper!"][Math.floor(Math.random()*4)]} ✓</p>`;
+        WP.phase="check";if(st.done.every(d=>d>=WRITE_ROUNDS))finishWrite(st);persist();renderWrite();speak(x.w);
+        setTimeout(()=>{if(mode==="write"&&view==="day"&&WP.idx===key)renderDay()},1200);
+      }else{
+        beep(false);WP.tries++;const arr=st.miss[i]=(st.miss[i]||[]);const t=normW(v).slice(0,30);if(t&&!arr.includes(t)&&arr.length<5)arr.push(t);
+        const giveUp=WP.tries>=3;
+        WP.result=`<p class="note">You wrote</p><div class="wtyped">${esc(normW(v))}</div><p class="note">Correct spelling</p><div class="wbig" ${fit}>${letterDiff(x.w,v)}</div>
+          <p class="feedback bad">${giveUp?"괜찮아요! 다음 라운드에서 다시 써 봐요.":"빨간 글자를 잘 보고 다시 해봐요."}</p>
+          ${giveUp?"":`<div class="spbtns"><button class="btn green big mic" id="wrRetry">👀 <span>Look again</span></button></div>`}`;
+        WP.phase="check";
+        if(giveUp){st.done[i]++;if(st.done.every(d=>d>=WRITE_ROUNDS))finishWrite(st)}
+        persist();renderWrite();speak(x.w);
+        if(giveUp)setTimeout(()=>{if(mode==="write"&&view==="day"&&WP.idx===key)renderDay()},2600);
+      }
+    };
+    $("#wrCheck").onclick=check;
+    inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();check()}};
+    $("#wrPeek").onclick=()=>{WP.tries++;WP.phase="look";renderWrite()};
+  }else{const r=$("#wrRetry");if(r)r.onclick=()=>{WP.phase="look";renderWrite()}}
+}
+
+/* ---------- speaking practice: listen to each example sentence and say it, 3 rounds, before the test ---------- */
+const SRec=window.SpeechRecognition||window.webkitSpeechRecognition;
+const SPEAK_ROUNDS=2,PASS=.6,CLEAR=.8;
+const SP={rec:null,listening:false,heardOnce:false,tries:0,idx:-1,blocked:false,msg:""};
+const speakText=x=>(x.ex||x.w).replace(/\s*\([^)]*\)/g,"").trim();
+function speakState(id){const n=setById(id).words.length;let s=saved.speak[id];
+  if(!s||!s.done||s.done.length!==n)s=saved.speak[id]={done:Array(n).fill(0),best:Array(n).fill(0),heard:Array(n).fill(""),start:Date.now(),complete:false,manual:false};
+  return s}
+function speakDone(id){const s=setById(id);if(!s||s.kind==="review"||control.speakOff||saved.stars[id]!=null)return true;const st=saved.speak[id];return !!(st&&st.complete)}
+function speakCount(id){const st=saved.speak[id];const n=setById(id).words.length;const d=st&&st.done?st.done.reduce((a,b)=>a+Math.min(b,SPEAK_ROUNDS),0):0;return `${d}/${n*SPEAK_ROUNDS}`}
+const NUMW=["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"];
+const toks=t=>String(t).toLowerCase().replace(/[’'‘]/g,"").replace(/[^a-z0-9\s-]/g," ").replace(/-/g," ").split(/\s+/).filter(Boolean).map(w=>/^\d+$/.test(w)&&+w<=20?NUMW[+w]:w);
+const canon=w=>w.replace(/our/g,"or").replace(/is(e|ed|ing)$/,"iz$1").replace(/(.)\1/g,"$1");
+const near=(x,y)=>x===y||canon(x)===canon(y)||(x.length>3&&(x+"s"===y||y+"s"===x||x+"es"===y||y+"es"===x));
+function matchScore(target,heard){
+  const a=toks(target),b=toks(heard),n=a.length,m=b.length;
+  const dp=Array.from({length:n+1},()=>Array(m+1).fill(0));
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=near(a[i],b[j])?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+  const hit=Array(n).fill(false);let i=0,j=0;
+  while(i<n&&j<m){if(near(a[i],b[j])){hit[i]=true;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}
+  return {score:n?hit.filter(Boolean).length/n:0,hit};
+}
+function markSentence(text,hit){/* colour each displayed word by whether its tokens were heard */
+  let k=0;return text.split(/(\s+)/).map(part=>{if(!part.trim())return part;const tk=toks(part);if(!tk.length)return esc(part);
+    const ok=tk.every((_,q)=>hit[k+q]);k+=tk.length;return `<span class="${ok?"w-hit":"w-miss"}">${esc(part)}</span>`}).join("");
+}
+function nextSpeakIdx(st){for(let r=1;r<=SPEAK_ROUNDS;r++){const i=st.done.findIndex(d=>d<r);if(i>=0)return {i,round:r}}return null}
+function renderSpeak(){
+  const set=setById(setId),ws=set.words,st=speakState(setId);
+  if(st.complete){
+    const clear=st.best.filter(b=>b>=CLEAR).length;
+    $("#pane").innerHTML=`<section class="result"><div style="width:80px;height:80px">${ROO}</div>
+      <h3 style="font-size:26px">Great speaking, Ian!</h3><p class="note">예문 ${ws.length}개를 ${SPEAK_ROUNDS}번씩 따라 말했어요. 또렷하게 말한 문장 ${clear} / ${ws.length}</p>
+      <div class="miss">${ws.map((x,i)=>`<span class="${st.best[i]>=CLEAR?"okchip":""}">${esc(x.w)} ${Math.round(st.best[i]*100)}%</span>`).join("")}</div>
+      <div class="row" style="justify-content:center"><button class="btn green big" id="spToTest">Take the test →</button><button class="btn ghost" id="spAgain">한 번 더 연습</button></div></section>`;
+    $("#spToTest").onclick=()=>{mode="test";T=null;renderDay();scrollTo(0,0)};
+    $("#spAgain").onclick=()=>{st.done=st.done.map(()=>0);st.complete=false;st.again=true;SP.idx=-1;persist();renderDay()};
+    return;
+  }
+  const nx=nextSpeakIdx(st);
+  if(!nx){finishSpeak(st);persist();renderDay();return}
+  const i=nx.i,round=nx.round,x=ws[i],text=speakText(x);
+  if(SP.idx!==i+":"+round){SP.idx=i+":"+round;SP.tries=0;SP.heardOnce=!hasTTS;SP.msg=""}
+  const canMic=!!SRec&&!SP.blocked;
+  const f=findForm(x.w,text);const shown=f.idx>=0?esc(text.slice(0,f.idx))+"<b>"+esc(f.form)+"</b>"+esc(text.slice(f.idx+f.form.length)):esc(text);
+  const total=st.done.reduce((a,b)=>a+Math.min(b,SPEAK_ROUNDS),0);
+  $("#pane").innerHTML=`
+  <section class="qcard speak">
+    <div class="qmeta"><span>Round ${round} / ${SPEAK_ROUNDS} · Sentence ${i+1} / ${ws.length}</span><span>${total} / ${ws.length*SPEAK_ROUNDS}</span></div>
+    <div class="sdots" style="grid-template-columns:repeat(${ws.length},1fr)" aria-hidden="true">${Array.from({length:SPEAK_ROUNDS},(_,q)=>q+1).map(r=>ws.map((_,k)=>`<i class="${st.done[k]>=r?"on":""}${k===i&&r===round?" cur":""}"></i>`).join("")).join("")}</div>
+    <div class="meaning">Listen, then say it · 듣고 따라 말해요<strong>${esc(x.w)} <span class="note" style="font-size:16px">${esc((x.m||"").replace(/\s*\(호주:[^)]*\)/,""))}</span></strong></div>
+    <p class="sentence" id="spSent">${shown}</p>
+    <div class="spbtns">
+      <button class="btn ghost" id="spListen">${SPK}<span>Listen</span></button>
+      ${canMic?`<button class="btn green big mic" id="spMic"${SP.heardOnce?"":" disabled"}>🎤 <span>Tap and say it</span></button>`
+              :`<button class="btn green big" id="spSelf"${SP.heardOnce?"":" disabled"}>✓ <span>I said it!</span></button>`}
+    </div>
+    <p class="feedback" id="spFb" aria-live="polite">${SP.msg||(SP.heardOnce?"":"먼저 잘 들어 보세요…")}</p>
+    <p class="heard" id="spHeard"></p>
+    ${canMic?"":`<p class="note">${SP.blocked?"마이크를 쓸 수 없어서 스스로 확인하는 방식으로 바뀌었어요. 소리 내어 따라 말한 뒤 버튼을 눌러요. (iPad: 설정 → Safari → 마이크 허용, 설정 → Siri 및 받아쓰기 켜기)":"이 브라우저는 음성 인식을 지원하지 않아요. 소리 내어 따라 말한 뒤 버튼을 눌러요. (iPad는 Safari, PC는 Chrome에서 음성 인식이 돼요)"}</p>`}
+  </section>`;
+  const enable=()=>{SP.heardOnce=true;const b=$("#spMic")||$("#spSelf");if(b)b.disabled=false;const fb=$("#spFb");if(fb&&!SP.msg)fb.textContent=canMic?"이제 🎤 버튼을 누르고 따라 말해요!":"따라 말한 뒤 버튼을 눌러요!"};
+  /* the mic unlocks once the sentence has been heard (with a timer fallback in case the voice never reports "finished") */
+  const play=()=>{if(SP.rec)return;const my=SP.idx;speak(text,()=>{if(SP.idx===my)enable()});setTimeout(()=>{if(SP.idx===my&&!SP.heardOnce)enable()},1500+text.length*90/(saved.rate||1))};
+  $("#spListen").onclick=play;
+  if(!SP.heardOnce&&SP.autoplayed!==SP.idx){SP.autoplayed=SP.idx;setTimeout(play,250)}
+  const advance=(score,heard,manual)=>{
+    st.done[i]++;st.best[i]=Math.max(st.best[i],score);if(heard)st.heard[i]=heard.slice(0,80);if(manual)st.manual=true;
+    if(st.done.every(d=>d>=SPEAK_ROUNDS))finishSpeak(st);
+    persist();setTimeout(()=>{if(mode==="speak"&&view==="day")renderDay()},score>=PASS||manual?1100:1800);
+  };
+  const sb=$("#spSelf");if(sb)sb.onclick=()=>{beep(true);$("#spFb").className="feedback ok";$("#spFb").textContent="Good job!";sb.disabled=true;advance(0,"",true)};
+  const mb=$("#spMic");if(mb)mb.onclick=()=>{
+    if(SP.rec){try{SP.rec.stop()}catch(e){}return}
+    stopSpeak();
+    const rec=new SRec();SP.rec=rec;rec.lang="en-AU";rec.interimResults=true;rec.maxAlternatives=3;rec.continuous=false;
+    let finalDone=false;
+    mb.classList.add("listening");mb.querySelector("span").textContent="Listening… 말해 보세요";$("#spFb").className="feedback";$("#spFb").textContent="";
+    rec.onresult=e=>{
+      const r=e.results[e.results.length-1];
+      if(!r.isFinal){$("#spHeard").textContent="“"+r[0].transcript+"”";return}
+      finalDone=true;let best={score:-1};
+      for(let a=0;a<r.length;a++){const m=matchScore(text,r[a].transcript);if(m.score>best.score)best={...m,heard:r[a].transcript}}
+      SP.rec=null;mb.classList.remove("listening");
+      $("#spSent").innerHTML=markSentence(text,best.hit);$("#spHeard").textContent="I heard: “"+best.heard+"”";
+      const pct=Math.round(best.score*100),fb=$("#spFb");
+      if(best.score>=PASS){beep(true);fb.className="feedback ok";fb.textContent=(best.score>=CLEAR?["Perfect!","Great!","Ripper!","Spot on!"][Math.floor(Math.random()*4)]:"Almost! 좋아요")+` ${pct}%`;mb.disabled=true;SP.msg="";advance(best.score,best.heard)}
+      else{SP.tries++;beep(false);fb.className="feedback bad";
+        if(SP.tries>=3){fb.textContent=`${pct}% · 괜찮아요, 다음 라운드에서 다시 해봐요!`;mb.disabled=true;SP.msg="";advance(best.score,best.heard)}
+        else{fb.textContent=`${pct}% · 빨간 단어를 잘 듣고 다시 말해 봐요 (${SP.tries}/3)`;mb.querySelector("span").textContent="Try again";speak(text)}}
+    };
+    rec.onerror=e=>{SP.rec=null;mb.classList.remove("listening");mb.querySelector("span").textContent="Tap and say it";
+      const fb=$("#spFb");fb.className="feedback bad";
+      if(e.error==="not-allowed"||e.error==="service-not-allowed"||e.error==="audio-capture"){SP.blocked=true;SP.msg="마이크를 쓸 수 없어요.";renderSpeak()}
+      else if(e.error==="no-speech")fb.textContent="잘 안 들렸어요. 버튼을 누르고 조금 더 크게 말해 봐요.";
+      else if(e.error!=="aborted")fb.textContent="음성 인식이 잠깐 안 됐어요. 다시 눌러 주세요. ("+e.error+")"};
+    rec.onend=()=>{if(!finalDone&&SP.rec===rec){SP.rec=null;mb.classList.remove("listening");mb.querySelector("span").textContent="Tap and say it"}};
+    try{rec.start()}catch(err){SP.rec=null;SP.blocked=true;renderSpeak()}
+  };
+}
+function finishSpeak(st){
+  if(st.complete)return;st.complete=true;
+  const cur=setById(setId),ws=cur.words;
+  saved.log.push({t:Date.now(),sid:setId,kind:"speak",label:setTitle(cur),n:ws.length,score:st.best.filter(b=>b>=CLEAR).length,ms:Date.now()-(st.start||Date.now()),
+    first:!st.again,manual:!!st.manual,miss:ws.map((x,i)=>({w:x.w,sid:setId,ex:speakText(x),best:Math.round(st.best[i]*100),typed:st.heard[i]?[st.heard[i]]:[]})).filter(m=>m.best<CLEAR*100)});
+  if(saved.log.length>LOG_MAX)saved.log=saved.log.slice(-LOG_MAX);
+  confetti();
+}
+
+/* ---------- test: meaning + sentence with a blank, spell the word ---------- */
+function newTest(list){return {items:shuffle(list).map(x=>({...x,typed:[],ans:findForm(x.w,x.ex)})),i:0,score:0,streak:0,best:0,miss:[],state:"ask",retry:false,cleared:0,start:Date.now(),starsBefore:totalStars()}}
+function renderTest(){
+  if(!T){
+    const cur=setById(setId);
+    const wlKeys=new Set(wrongList().map(x=>wkey(x.sid,x.w)));
+    if(setId==="mix"){const pool=[];LEARN.forEach(s=>{if(saved.stars[s.id]!=null)s.words.forEach(w=>pool.push({...w,sid:s.id,from:"Day "+s.day}))});T=newTest(shuffle(pool).slice(0,10))}
+    else if(cur&&cur.kind==="review"){
+      const pool=cur.covers.flatMap(s=>s.words.map(w=>({...w,sid:s.id,from:"Day "+s.day})));
+      const tricky=shuffle(pool.filter(w=>wlKeys.has(wkey(w.sid,w.w)))),rest=shuffle(pool.filter(w=>!wlKeys.has(wkey(w.sid,w.w))));
+      T=newTest(tricky.concat(rest).slice(0,10))}
+    else if(setId==="tricky"){const wl=wrongList().slice(0,10);T=newTest(wl.map(x=>{const s=setById(x.sid);const w=s&&s.words.find(y=>y.w===x.w);return w?{...w,sid:x.sid,from:dayName(s)}:null}).filter(Boolean))}
+    else T=newTest(cur.words.map(w=>({...w,sid:setId})));
+    if(!T.items.length){go("home");return}
+  }
+  if(T.i>=T.items.length)return renderResult();
+  const q=T.items[T.i],n=T.items.length;
+  const pos=8+(T.i/n)*78;
+  const hasBlank=q.ans.idx>=0;
+  const before=hasBlank?esc(q.ex.slice(0,q.ans.idx)):"",after=hasBlank?esc(q.ex.slice(q.ans.idx+q.ans.form.length)):"";
+  const isRevTest=(setById(setId)||{}).kind==="review";
+  $("#pane").innerHTML=`
+  <div class="track" aria-hidden="true"><div class="ground"></div><div class="flag">${FLAG}</div><div class="roo" id="roo" style="left:${pos}%">${ROO}</div></div>
+  <section class="qcard">
+    <div class="qmeta"><span>Question ${T.i+1} / ${n}${q.from&&(setId==="mix"||setId==="tricky"||isRevTest)?" · "+esc(q.from):""}</span><span>Score ${T.score}${T.streak>=2?` · <span class="streak">${T.streak} in a row!</span>`:""}</span></div>
+    <div class="meaning">뜻 · Meaning<strong>${esc((q.m||"").replace(/\s*\(호주:[^)]*\)/,""))}</strong></div>
+    <p class="sentence" id="sent">${before}<span class="blank" id="blank">______</span>${after}</p>
+    <div class="answer">
+      <input id="ans" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="Type the word" aria-label="Your answer">
+      <button class="btn" id="check">Check</button>
+    </div>
+    <p class="feedback" id="fb" aria-live="polite"></p>
+  </section>`;
+  const inp=$("#ans");inp.focus({preventScroll:true});
+  const finish=()=>{T.state="done";$("#check").textContent=T.i+1<n?"Next →":"See result";inp.readOnly=true;$("#check").focus({preventScroll:true})};
+  const check=()=>{
+    if(T.state==="done"){T.i++;T.state="ask";T.retry=false;renderTest();return}
+    const v=inp.value.trim().toLowerCase();if(!v)return;
+    const ok=[q.ans.form,q.w,q.alt].filter(Boolean).map(s=>s.toLowerCase()).includes(v);
+    const bl=$("#blank"),fb=$("#fb"),k=wkey(q.sid,q.w);
+    if(ok){
+      if(!T.retry){T.score++;T.streak++;T.best=Math.max(T.best,T.streak);
+        if(setId==="tricky"||isRevTest){
+          const inNote=!!saved.wrong[k]||control.wrong.some(x=>wkey(x.sid,x.w)===k);
+          if(inNote){delete saved.wrong[k];saved.cleared[k]=Date.now();T.cleared++}}}
+      beep(true);bl.textContent=q.ans.form;bl.className="blank ok";inp.className="ok";
+      const praise=["Great job!","Awesome!","Spot on!","You legend!","Brilliant!","Ripper!"][Math.floor(Math.random()*6)];
+      fb.className="feedback ok";fb.textContent=praise+(v===q.w.toLowerCase()&&q.w.toLowerCase()!==q.ans.form.toLowerCase()?` 문장에서는 "${q.ans.form}" 이에요.`:"");
+      const roo=$("#roo");roo.style.left=(8+((T.i+1)/n)*78)+"%";roo.classList.add("hop");
+      speak(q.ex||q.w);finish();
+    }else{
+      q.typed.push(v.slice(0,40));
+      T.streak=0;beep(false);inp.className="bad";const sn=$("#sent");sn.classList.remove("shake");void sn.offsetWidth;sn.classList.add("shake");
+      if(!T.retry){T.retry=true;if(!T.miss.includes(q))T.miss.push(q);
+        saved.wrong[k]={w:q.w,sid:q.sid,n:((saved.wrong[k]||{}).n||0)+1};persist();
+        fb.className="feedback bad";fb.textContent="Not quite. Try once more! (다시 한 번)";inp.select()}
+      else{bl.textContent=q.ans.form;bl.className="blank bad";fb.className="feedback bad";fb.textContent=`정답은 "${q.ans.form}" — 철자를 잘 보고 넘어가요.`;speak(q.ans.form);finish()}
+    }
+  };
+  $("#check").onclick=check;
+  inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();check()}};
+}
+function logTest(n,s){
+  const cur=setById(setId);
+  const kind=T.noSave?"redo":setId==="mix"?"mix":setId==="tricky"?"tricky":cur.kind==="review"?"review":cur.kind==="school"?"school":"day";
+  const sid=T.noSave?"redo":setId;
+  const label=kind==="redo"?"틀린 단어 다시":kind==="mix"?"Mix test":kind==="tricky"?"Tricky words":setTitle(cur);
+  saved.log.push({t:Date.now(),sid,kind,label,n,score:s,ms:Date.now()-T.start,first:!saved.log.some(l=>l.sid===sid),
+    miss:T.miss.map(m=>({w:m.w,sid:m.sid,typed:m.typed.slice(0,3)}))});
+  if(saved.log.length>LOG_MAX)saved.log=saved.log.slice(-LOG_MAX);
+}
+function renderResult(){
+  const n=T.items.length,s=T.score,r=s/n;
+  const stars=r===1?3:r>=.8?2:r>=.5?1:0;
+  const isDay=!(setId==="mix"||setId==="tricky")&&!T.noSave;
+  /* stars: best score kept; fixing every missed word in "Retry missed words" upgrades the set to 3 stars */
+  const owner=isDay?setId:T.parent||null;
+  if(!T.saved){
+    if(isDay)saved.stars[setId]=Math.max(saved.stars[setId]||0,stars);
+    if(T.parent&&s===n&&(saved.stars[T.parent]||0)<3){saved.stars[T.parent]=3;T.upgraded=true}
+    const k=ymd(new Date());saved.days[k]=(saved.days[k]||0)+1;
+    logTest(n,s);persist();T.saved=true;
+    T.newPals=PALS.slice(palsOpen(T.starsBefore),palsOpen(totalStars()));
+  }
+  if(!T.fx&&(r>=.8||T.newPals.length)){confetti();T.fx=true}
+  const msg=T.upgraded?"All fixed! You earned 3 stars!":T.parent&&s===n?"All fixed! Great job!":T.parent?"Almost there! Fix the rest to get 3 stars.":r===1?"Perfect score! You're a word champion!":r>=.8?"Brilliant work, Ian!":r>=.5?"Good effort! A bit more practice and you'll nail it.":"Let's learn the words once more, then try again.";
+  const nx=nextSet();
+  $("#pane").innerHTML=`
+  <section class="result">
+    <div style="width:88px;height:88px">${ROO}</div>
+    <div class="big">${s} / ${n}</div>
+    ${isDay?starRow(stars):T.parent?starRow(saved.stars[T.parent]||0):""}
+    <h3 style="font-size:24px">${msg}</h3>
+    ${T.newPals.map(p=>`<div class="newpal"><div class="e">${p[0]}</div><div><div class="k">New friend in your zoo!</div><h3 style="font-size:22px">${esc(p[1])}</h3><p class="note">${esc(p[2])} ${esc(p[3])}</p></div></div>`).join("")}
+    ${T.best>=3?`<p class="note">Best: ${T.best} in a row</p>`:""}
+    ${(()=>{const o=palsOpen(totalStars()),at=PAL_AT[o];return at?`<p class="note">Next zoo friend in ${at-totalStars()} ★</p>`:""})()}
+    ${T.cleared?`<p class="note">오답 노트에서 ${T.cleared}개를 지웠어요!</p>`:""}
+    ${T.miss.length?`<p class="note">오답 노트에 넣은 단어</p><div class="miss">${T.miss.map(m=>`<span>${esc(m.w)}</span>`).join("")}</div>`:""}
+    ${T.miss.length&&owner&&(saved.stars[owner]||0)<3?`<p class="note">틀린 단어를 다시 풀어서 모두 맞히면 별 3개를 받아요!</p>`:""}
+    <div class="row" style="justify-content:center">
+      ${T.miss.length?`<button class="btn sun" id="redo">${owner&&(saved.stars[owner]||0)<3?"Fix missed words → ★★★":"Retry missed words"}</button>`:""}
+      ${(isDay||T.parent)&&nx.id!==owner?`<button class="btn green" id="nextDay">Next: ${dayName(nx)}</button>`:""}
+      <button class="btn" id="again">${isDay?"Test again":"New test"}</button>
+      <button class="btn ghost" id="home">Home</button>
+    </div>
+  </section>`;
+  T.newPals.forEach(p=>setTimeout(()=>speak("New friend! "+p[1]+"."),900));
+  const redo=$("#redo");if(redo)redo.onclick=()=>{const m=T.miss.map(({ans,typed,...x})=>x);T=newTest(m);T.noSave=true;T.parent=owner;renderTest()};
+  const nd=$("#nextDay");if(nd)nd.onclick=()=>go("day",nx.id,nx.kind==="review"?"test":"study");
+  $("#again").onclick=()=>{T=null;renderTest()};
+  $("#home").onclick=()=>go("home");
+}
+
+/* =====================================================================
+   Parent dashboard (shown only to ADMINS; Firestore rules enforce access)
+   ===================================================================== */
+const A={students:null,loading:false,uid:null,st:null,ctl:null,tab:"overview",err:"",more:30,unsub:[]};
+function adminReset(){A.unsub.forEach(f=>{try{f()}catch(e){}});Object.assign(A,{students:null,loading:false,uid:null,st:null,ctl:null,err:"",more:30,unsub:[]})}
+const db=()=>firebase.firestore();
+const stuRef=uid=>db().collection("wordhop").doc(uid);
+function adminLoad(){
+  if(A.loading)return;A.loading=true;A.err="";
+  db().collection("wordhop").get().then(qs=>{A.loading=false;
+    A.students=qs.docs.filter(d=>d.id!==cloud.user.uid).map(d=>{const x=d.data()||{},p=x.profile||{};return {uid:d.id,name:p.name||"",email:p.email||"",updatedAt:x.updatedAt||0}}).sort((a,b)=>b.updatedAt-a.updatedAt);
+    if(A.students.length&&!A.uid)adminWatch(A.students[0].uid);else render()})
+  .catch(e=>{A.loading=false;A.students=[];A.err=e.code||e.message;render()});
+}
+function adminWatch(uid){
+  A.unsub.forEach(f=>{try{f()}catch(e){}});A.uid=uid;A.st=null;A.ctl=null;A.more=30;
+  const fail=e=>{A.err=e.code||e.message;if(view==="admin")renderAdmin()};
+  A.unsub=[stuRef(uid).onSnapshot(s=>{A.st=normSt(s.data());if(view==="admin")renderAdmin()},fail),
+    stuRef(uid).collection("control").doc("main").onSnapshot(s=>{A.ctl=normCtl(s.exists?s.data():null);if(view==="admin")renderAdmin()},fail)];
+  render();
+}
+function saveCtl(fn,msg){
+  const c=JSON.parse(JSON.stringify(A.ctl));fn(c);A.ctl=c;renderAdmin();
+  return stuRef(A.uid).collection("control").doc("main").set(c).then(()=>toast(msg||"저장했어요")).catch(e=>toast("저장하지 못했어요: "+(e.code||e.message)));
+}
+const studentName=()=>{const s=(A.students||[]).find(x=>x.uid===A.uid);return s?(s.name||s.email||"학생"):"학생"};
+const scoreCls=(s,n)=>{const p=n?s/n:0;return p>=.8?"hi":p>=.5?"mid":"lo"};
+const KIND_KO={day:"새 Day",review:"복습",tricky:"오답 노트",mix:"Mix",school:"학교 단어",redo:"틀린 단어 다시",speak:"스피킹",write:"쓰기",learn:"뜻 짝 맞추기"};
+const allWords=(()=>{let c=null;return ()=>c||(c=(()=>{const seen=new Set(),out=[];LEARN.forEach(s=>s.words.forEach(w=>{const k=w.w.toLowerCase();if(!seen.has(k)){seen.add(k);out.push({w:w.w,m:w.m,sid:s.id,day:s.day})}}));return out})())})();
+
+function adminStats(st,ctl){
+  const logs=st.log.slice().sort((a,b)=>b.t-a.t),now=Date.now(),today=brisDate(now);
+  const perDay={};logs.forEach(l=>{const d=brisDate(l.t);perDay[d]=(perDay[d]||0)+1});
+  Object.entries(st.days).forEach(([d,c])=>{if(!perDay[d])perDay[d]=c});
+  const wd=EWD.indexOf(brisParts(now).weekday);const monOff=(wd+6)%7;
+  let week=0;for(let i=0;i<=monOff;i++)if(perDay[brisDate(now-i*864e5)])week++;
+  const recent=logs.filter(l=>l.n&&!["speak","write","learn"].includes(l.kind)).slice(0,10);
+  const avg=recent.length?Math.round(recent.reduce((a,l)=>a+l.score/l.n,0)/recent.length*100):null;
+  const nx=nextSetFor(st,ctl);const idx=COURSE.indexOf(nx);let toRev=0;for(let j=idx;j<COURSE.length&&COURSE[j].kind!=="review";j++)toRev++;
+  const lastT=logs[0]?logs[0].t:(st.updatedAt||0);
+  const strip=[];for(let i=13;i>=0;i--){const t=now-i*864e5,p=brisParts(t),d=brisDate(t);strip.push({d,c:perDay[d]||0,day:+p.day,wd:KWD[EWD.indexOf(p.weekday)],today:i===0})}
+  return {logs,today:perDay[today]||0,week,avg,nx,toRev,lastT,strip,learnDone:LEARN.filter(s=>st.stars[s.id]!=null).length,
+    stars:totalStarsFor(st,ctl),wl:wrongListFor(st,ctl),unread:ctl.msgs.filter(m=>!st.seen.includes(m.id)).length};
+}
+function logRows(logs){
+  if(!logs.length)return '<p class="note">아직 시험 기록이 없어요. 이 버전부터 시험을 볼 때마다 기록이 쌓여요.</p>';
+  return `<div class="rows">${logs.map(l=>`<div class="rowi"><span class="score ${scoreCls(l.score,l.n)}">${l.score}/${l.n}</span><div class="ri">
+    <div><b>${esc(l.label)}</b> <span class="tag${l.kind==="speak"?" spk":l.kind==="write"?" wr":l.kind==="learn"?" ok":""}">${esc(KIND_KO[l.kind]||l.kind)}${l.kind==="day"||l.kind==="school"?(l.first?" · 첫 시도":" · 재시도"):""}${l.kind==="speak"?(l.manual?" · 자가 확인":" · 또렷한 문장"):""}${l.kind==="write"||l.kind==="learn"?" · 한 번에 맞힘":""}</span></div>
+    <div class="note">${esc(brisTime(l.t))} · ${dur(l.ms)}</div>
+    ${(l.miss||[]).length?`<div class="rm">${l.miss.map(m=>`<b>${esc(m.w)}</b>${m.best!=null?` ${m.best}%`:""}${m.typed&&m.typed.length?` → <span class="typed">${m.typed.map(esc).join(", ")}</span>`:""}`).join(" · ")}</div>`:""}
+  </div></div>`).join("")}</div><p class="note">시간은 브리즈번 기준이에요. 빨간 글씨는 이안이가 실제로 쓴 답이에요.</p>`;
+}
+function reviewChart(list){
+  if(!list.length)return '<p class="note">아직 복습 시험 기록이 없어요. 5일 공부할 때마다 복습 시험이 생겨요.</p>';
+  const step=34,left=40,W=Math.max(320,left+12+list.length*step),H=180,top=20,bot=34,bw=22,h=H-top-bot;
+  const y=p=>top+h*(1-p);
+  let g=[0,.5,.8,1].map(p=>`<line x1="${left}" x2="${W-6}" y1="${y(p)}" y2="${y(p)}" stroke="var(--line)" stroke-width="1"${p===.8?' stroke-dasharray="4 3"':""}/><text x="${left-6}" y="${y(p)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${Math.round(p*100)}%</text>`).join("");
+  list.forEach((l,i)=>{const p=l.n?l.score/l.n:0,x=left+12+i*step,c=p>=.8?"var(--gum)":p>=.5?"var(--sun)":"var(--coral)";
+    const first=(l.label.match(/Day (\d+)/)||[0,""])[1];
+    g+=`<rect x="${x}" y="${y(p)}" width="${bw}" height="${Math.max(1,h*p)}" rx="4" fill="${c}"><title>${esc(l.label)} · ${l.score}/${l.n} · ${esc(brisTime(l.t))}</title></rect>
+    <text x="${x+bw/2}" y="${y(p)-5}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)">${l.score}</text>
+    <text x="${x+bw/2}" y="${H-bot+16}" text-anchor="middle" font-size="10" fill="var(--muted)">D${esc(first)}</text>`});
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="복습 시험 점수 추이">${g}</svg></div>
+  <p class="note">막대 위 숫자는 10문제 중 맞힌 개수, 아래는 복습 범위의 첫 Day예요. 점선은 80%(별 2개) 기준이에요.</p>`;
+}
+
+function admOverview(st,ctl){
+  const S=adminStats(st,ctl);
+  const tile=(k,v,s,cls)=>`<div class="stat ${cls||""}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s||""}</div></div>`;
+  return `<div class="stats">
+    ${tile("오늘 (브리즈번)",S.today?`✓ ${S.today}회`:"아직",S.today?"오늘 시험을 봤어요":"오늘은 아직 시험 기록이 없어요",S.today?"good":"warn")}
+    ${tile("마지막 학습",S.lastT?ago(S.lastT):"—",S.lastT?esc(brisTime(S.lastT)):"")}
+    ${tile("진도",`${S.learnDone} / ${LEARN.length}`,`다음: ${esc(dayName(S.nx))} · ${esc(S.nx.label)}`)}
+    ${tile("이번 주 학습일",`${S.week}일`,"월요일부터 (브리즈번 기준)")}
+    ${tile("최근 10회 평균",S.avg==null?"—":S.avg+"%",S.avg==null?"기록이 쌓이면 보여요":"시험 점수 기준")}
+    ${tile("다음 복습",S.nx.kind==="review"?"지금":S.toRev+"일 후","공부한 날 5일마다")}
+    ${tile("별 · 동물",`★ ${S.stars}`,`동물 ${palsOpen(S.stars)} / ${PALS.length}마리`)}
+    ${tile("오답 노트",`${S.wl.length}개`,S.unread?`안 읽은 메시지 ${S.unread}개`:"")}
+  </div>
+  <section class="panel"><h3>최근 2주</h3>
+    <div class="strip">${S.strip.map(d=>`<div title="${d.d} · ${d.c}회"><b class="${d.c?"on":""}${d.today?" today":""}">${d.day}</b><span>${d.wd}</span></div>`).join("")}</div>
+    <p class="note">초록색은 시험을 본 날이에요.</p></section>
+  <section class="panel"><h3>최근 시험</h3>${logRows(S.logs.slice(0,5))}</section>`;
+}
+function admLog(st){
+  const logs=st.log.slice().sort((a,b)=>b.t-a.t);
+  const reviews=st.log.filter(l=>l.kind==="review").sort((a,b)=>a.t-b.t).slice(-20);
+  return `<section class="panel"><h3>복습 시험 점수 추이</h3>${reviewChart(reviews)}</section>
+  <section class="panel"><h3>전체 시험 기록 <span class="note">(${logs.length}회)</span></h3>${logRows(logs.slice(0,A.more))}
+  ${logs.length>A.more?'<div class="row"><button class="btn ghost" id="more">더 보기</button></div>':""}</section>`;
+}
+function missAgg(st,ctl){
+  const agg={};
+  st.log.filter(l=>!["speak","write","learn"].includes(l.kind)).forEach(l=>(l.miss||[]).forEach(m=>{const k=wkey(m.sid,m.w);const a=agg[k]||(agg[k]={k,w:m.w,sid:m.sid,n:0,typed:[],last:0});a.n++;(m.typed||[]).forEach(t=>{if(!a.typed.includes(t))a.typed.push(t)});a.last=Math.max(a.last,l.t)}));
+  Object.values(st.wrong).forEach(x=>{const k=wkey(x.sid,x.w);if(!agg[k])agg[k]={k,w:x.w,sid:x.sid,n:x.n,typed:[],last:0}});
+  const inNote=new Set(wrongListFor(st,ctl).map(x=>wkey(x.sid,x.w)));
+  return Object.values(agg).map(a=>{const s=findSet(a.sid,ctl);const w=s&&s.words.find(y=>y.w===a.w);return {...a,m:w?w.m:"",from:s?dayName(s):"",inNote:inNote.has(a.k)}})
+    .sort((a,b)=>b.n-a.n||b.last-a.last);
+}
+function speakPanel(st){
+  const agg={};st.log.filter(l=>l.kind==="speak"&&!l.manual).forEach(l=>(l.miss||[]).forEach(m=>{const k=wkey(m.sid,m.w);const a=agg[k]||(agg[k]={w:m.w,ex:m.ex,n:0,best:100,heard:"",last:0});a.n++;if(m.best<=a.best){a.best=m.best;a.heard=(m.typed||[])[0]||a.heard}a.last=Math.max(a.last,l.t)}));
+  const list=Object.values(agg).sort((a,b)=>a.best-b.best||b.last-a.last);
+  const done=st.log.filter(l=>l.kind==="speak").length;
+  return `<section class="panel"><h3>말하기가 어려웠던 문장</h3><p class="note">스피킹 연습(예문 ${SPEAK_ROUNDS}번씩 따라 말하기)에서 가장 잘 말한 기록이 80% 미만인 문장이에요. 기계가 알아들은 내용을 보면 어떤 소리가 약한지 알 수 있어요. 아이 목소리는 인식이 덜 정확할 수 있어서 참고용이에요.</p>
+  ${list.length?`<div class="rows">${list.slice(0,30).map(a=>`<div class="rowi"><span class="score ${a.best>=60?"mid":"lo"}">${a.best}%</span><div class="ri"><div><b>${esc(a.w)}</b> · ${esc(a.ex||"")}</div>${a.heard?`<div class="note">알아들은 말: <span class="typed">${esc(a.heard)}</span></div>`:""}</div></div>`).join("")}</div>`
+    :`<p class="note">${done?"모든 문장을 또렷하게 말했어요!":"아직 스피킹 연습 기록이 없어요."}</p>`}</section>`;
+}
+function writePanel(st){
+  const agg={};st.log.filter(l=>l.kind==="write").forEach(l=>(l.miss||[]).forEach(m=>{const k=wkey(m.sid,m.w);const a=agg[k]||(agg[k]={w:m.w,n:0,typed:[],last:0});a.n++;(m.typed||[]).forEach(t=>{if(!a.typed.includes(t))a.typed.push(t)});a.last=Math.max(a.last,l.t)}));
+  const list=Object.values(agg).sort((a,b)=>b.typed.length-a.typed.length||b.last-a.last);
+  return `<section class="panel"><h3>쓰기 연습에서 헷갈린 철자</h3><p class="note">Look·Cover·Write·Check 연습 중에 기억해서 썼다가 틀린 철자예요. 연습 단계라 오답 노트에는 들어가지 않아요.</p>
+  ${list.length?`<div class="rows">${list.slice(0,30).map(a=>`<div class="rowi"><span class="score mid">${a.typed.length}개</span><div class="ri"><div><b>${esc(a.w)}</b></div><div class="note">쓴 철자: <span class="typed">${a.typed.map(esc).join(", ")}</span></div></div></div>`).join("")}</div>`
+   :`<p class="note">${st.log.some(l=>l.kind==="write")?"쓰기 연습에서 틀린 철자가 없어요!":"아직 쓰기 연습 기록이 없어요."}</p>`}</section>`;
+}
+function admMiss(st,ctl){
+  const list=missAgg(st,ctl);
+  if(!list.length)return '<section class="panel"><p class="note">아직 시험에서 틀린 단어가 없어요.</p></section>'+writePanel(st)+speakPanel(st);
+  return `<section class="panel"><h3>자주 틀리는 단어</h3><p class="note">처음 시도에서 틀린 횟수 순서예요. 빨간 글씨가 이안이가 실제로 쓴 답이라, 어떤 철자에서 헷갈리는지 볼 수 있어요.</p>
+  <div class="rows">${list.slice(0,40).map(a=>`<div class="rowi"><span class="score lo">${a.n}회</span><div class="ri">
+    <div><b>${esc(a.w)}</b> <span class="note">${esc((a.m||"").replace(/\s*\(호주:[^)]*\)/,""))}</span></div>
+    <div class="note">${esc(a.from)}${a.typed.length?` · 쓴 답: <span class="typed">${a.typed.map(esc).join(", ")}</span>`:""}</div></div>
+    <div class="rs">${a.inNote?'<span class="tag">오답 노트</span>':`<span class="tag ok">해결 ✓</span><button class="btn ghost sm" data-addwrong="${esc(a.k)}">다시 넣기</button>`}</div></div>`).join("")}</div></section>`+writePanel(st)+speakPanel(st);
+}
+function admMsg(st,ctl){
+  const msgs=ctl.msgs.slice().sort((a,b)=>b.t-a.t);
+  return `<section class="panel form"><h3>이안이에게 메시지 보내기</h3>
+    <textarea id="msgText" maxlength="300" placeholder="예) Great job this week, Ian! Dad is proud of you."></textarea>
+    <label class="note">보너스 별 <select id="msgBonus"><option value="0">없음</option><option>1</option><option>3</option><option>5</option><option>10</option><option>15</option></select></label>
+    <div class="row"><button class="btn" id="msgSend">보내기</button><span class="note">이안이가 다음에 앱을 열면 홈 화면 맨 위에 보여요. 보너스 별은 바로 더해져요 (15개마다 동물 1마리).</span></div></section>
+  <section class="panel"><h3>보낸 메시지</h3>${msgs.length?`<div class="list">${msgs.map(m=>`<div class="msgrow"><div style="min-width:0"><p>${esc(m.text)}</p>
+    <span class="note">${esc(brisTime(m.t))} · ${m.bonus?`+${m.bonus} ★ · `:""}${st.seen.includes(m.id)?"읽음 ✓":"아직 안 읽음"}</span></div>
+    <button class="btn ghost sm" data-delmsg="${esc(m.id)}">삭제</button></div>`).join("")}</div>
+    <p class="note">메시지를 지우면 그 메시지로 준 보너스 별도 빠져요.</p>`:'<p class="note">아직 보낸 메시지가 없어요.</p>'}</section>`;
+}
+function admPlan(st,ctl){
+  const opts=sel=>LEARN.map(s=>`<option value="${s.id}"${sel===s.id?" selected":""}>Day ${s.day} · ${esc(s.label)}${st.stars[s.id]!=null?" ✓":""}</option>`).join("");
+  const startSet=ctl.startFrom?COURSE[ctl.startFrom]:null;
+  const today=brisDate(Date.now()),revOn=ctl.reviewOnly===today;
+  const dadWrong=ctl.wrong.map(x=>{const k=wkey(x.sid,x.w),cleared=(st.cleared[k]||0)>x.at&&!st.wrong[k];return {...x,k,cleared}});
+  return `<section class="panel form"><h3>다음 학습 위치</h3>
+    <p class="note">지금: ${startSet?`<b>${esc(dayName(startSet))}</b>부터`:"처음부터 순서대로"} · 다음 학습은 <b>${esc(dayName(nextSetFor(st,ctl)))}</b>이에요. 지정한 Day부터 안 한 Day를 순서대로 진행해요.</p>
+    <select id="planStart">${opts(startSet&&startSet.id)}</select>
+    <div class="row"><button class="btn" id="planStartGo">이 Day부터 하기</button>${ctl.startFrom?'<button class="btn ghost" id="planStartClear">처음부터 순서대로</button>':""}</div></section>
+  <section class="panel form"><h3>건너뛸 Day</h3>
+    ${ctl.skip.length?`<div class="chips">${ctl.skip.map(id=>{const s=findSet(id,ctl);return `<span>${esc(s?dayName(s):id)}<button data-unskip="${esc(id)}" aria-label="건너뛰기 해제">×</button></span>`}).join("")}</div>`:'<p class="note">건너뛰는 Day가 없어요.</p>'}
+    <select id="planSkip">${opts("")}</select>
+    <div class="row"><button class="btn ghost" id="planSkipGo">건너뛰기에 추가</button></div></section>
+  <section class="panel"><h3>Learn 확인 (모두 듣기 + 뜻 짝 맞추기)</h3>
+    <p class="note">${ctl.learnOff?"<b>꺼짐</b> · Learn 화면을 보기만 하고 바로 다음 단계로 갈 수 있어요.":"<b>켜짐</b> · 카드 10장을 모두 듣고 뜻 짝 맞추기 게임을 끝내야 Write가 열려요."}</p>
+    <div class="row"><button class="btn ghost" id="learnToggle">${ctl.learnOff?"다시 켜기":"잠시 끄기"}</button></div></section>
+  <section class="panel"><h3>시험 전 쓰기 연습</h3>
+    <p class="note">${ctl.writeOff?"<b>꺼짐</b> · Learn 다음 바로 스피킹(또는 시험)으로 넘어가요.":`<b>켜짐</b> · 단어 10개를 Look·Say·Cover·Write·Check로 ${WRITE_ROUNDS}번씩 기억해서 써야 다음 단계가 열려요.`}</p>
+    <div class="row"><button class="btn ghost" id="writeToggle">${ctl.writeOff?"다시 켜기":"잠시 끄기"}</button></div></section>
+  <section class="panel"><h3>시험 전 스피킹 연습</h3>
+    <p class="note">${ctl.speakOff?"<b>꺼짐</b> · 이안이가 Learn 다음 바로 시험을 볼 수 있어요.":"<b>켜짐</b> · 새 Day와 학교 단어는 예문 10개를 ${SPEAK_ROUNDS}번씩 듣고 따라 말해야 시험이 열려요."}</p>
+    <div class="row"><button class="btn ghost" id="speakToggle">${ctl.speakOff?"다시 켜기":"잠시 끄기"}</button></div></section>
+  <section class="panel"><h3>오늘은 복습만</h3>
+    <p class="note">${revOn?`<b>켜짐</b> · 오늘(${today}, 브리즈번) 이안이 홈 화면에 새 Day 대신 오답 노트 복습이 나와요.`:"켜면 오늘 하루(브리즈번 날짜) 동안 새 Day 대신 오답 노트 복습이 나와요. 내일은 자동으로 원래대로 돌아가요."}</p>
+    <div class="row"><button class="btn ${revOn?"ghost":"sun"}" id="revToggle">${revOn?"끄기":"오늘은 복습만 하기"}</button></div></section>
+  <section class="panel form"><h3>오답 노트에 단어 넣기</h3>
+    <input type="text" id="addWord" list="wordList" placeholder="단어를 입력하세요 (예: necessary)" autocomplete="off">
+    <datalist id="wordList">${allWords().map(w=>`<option value="${esc(w.w)}">${esc(w.m)} · Day ${w.day}</option>`).join("")}</datalist>
+    <div class="row"><button class="btn ghost" id="addWordGo">오답 노트에 넣기</button></div>
+    ${dadWrong.length?`<div class="chips">${dadWrong.map(x=>`<span>${esc(x.w)}<small>${x.cleared?"해결 ✓":"남음"}</small><button data-delwrong="${esc(x.k)}" aria-label="빼기">×</button></span>`).join("")}</div>`:""}</section>`;
+}
+function parseSchool(txt){
+  const out=[],seen=new Set();
+  txt.split("\n").forEach(line=>{const p=line.split(/\s*[|\t]\s*/).map(x=>x.trim());const w=(p[0]||"").replace(/^\d+[.)]\s*/,"");
+    if(!w||!/^[A-Za-z][A-Za-z' -]{0,40}$/.test(w)||seen.has(w.toLowerCase()))return;seen.add(w.toLowerCase());out.push({w,m:p[1]||"",ex:p.slice(2).join(" | ")||""})});
+  return out;
+}
+function admSchool(st,ctl){
+  return `<section class="panel form"><h3>학교 단어 추가</h3>
+    <input type="text" id="schTitle" maxlength="40" placeholder="제목 (예: Term 4 Week 2 spelling)">
+    <textarea id="schWords" placeholder="한 줄에 하나씩:  단어 | 뜻 | 예문&#10;because | ~때문에 | I stayed home because I was sick.&#10;friend | 친구 | My friend is kind.&#10;through"></textarea>
+    <p class="note">뜻과 예문은 없어도 돼요. 예문에 그 단어가 들어 있으면 빈칸 문제로, 없으면 뜻만 보고 쓰는 문제로 나와요. 뜻을 비우면 예문만 보고 맞혀야 하니, 뜻이나 예문 중 하나는 넣는 걸 추천해요.</p>
+    <div class="row"><button class="btn" id="schAdd">이안이에게 추가</button><span class="note" id="schCount"></span></div></section>
+  <section class="panel"><h3>추가한 학교 단어</h3>${ctl.school.length?`<div class="list">${ctl.school.slice().reverse().map(s=>`<div class="msgrow"><div style="min-width:0"><p><b>${esc(s.title)}</b> · ${s.words.length}단어 · ${st.stars[s.id]!=null?starRow(st.stars[s.id]):"아직 안 함"}</p>
+    <span class="note">${s.words.map(w=>esc(w.w)).join(", ")}</span></div><button class="btn ghost sm" data-delsch="${esc(s.id)}">삭제</button></div>`).join("")}</div>`:'<p class="note">아직 없어요.</p>'}</section>`;
+}
+const ADM_TABS=[["overview","현황"],["log","시험 기록"],["miss","오답 분석"],["msg","메시지·보너스"],["plan","학습 계획"],["school","학교 단어"]];
+function renderAdmin(){
+  const keep={};app.querySelectorAll("#adm input[id],#adm textarea[id],#adm select[id]").forEach(el=>keep[el.id]=el.value);
+  const foc=document.activeElement&&document.activeElement.id;
+  const head=`<header class="top"><div class="brand"><div style="width:48px;height:48px">${ROO}</div><div><h1>Parent dashboard</h1><small>${esc(cloud.user.email||"")}</small></div></div>
+    <div class="pills"><button class="btn ghost" id="toStudent">Student view</button><button class="btn ghost" id="admOut">로그아웃</button></div></header>`;
+  let body="";
+  if(A.err)body=`<section class="panel signin"><h3>기록을 불러오지 못했어요</h3><p class="note">${/permission-denied/.test(A.err)?"Firestore 규칙이 관리자 읽기를 막고 있어요. 새 firestore.rules를 Firebase 콘솔 → Firestore → 규칙에 붙여넣고 '게시'해 주세요.":esc(A.err)}</p><p class="note">오류 코드: <code>${esc(A.err)}</code></p><div class="row"><button class="btn" id="admRetry">다시 시도</button></div></section>`;
+  else if(A.students===null){body='<p class="note">불러오는 중…</p>';adminLoad()}
+  else if(!A.students.length)body='<section class="panel"><h3>아직 학생 기록이 없어요</h3><p class="note">이안이가 자기 Google 계정으로 앱에 로그인하고 한 번 동기화되면 여기에 나타나요.</p><div class="row"><button class="btn ghost" id="admRetry">새로고침</button></div></section>';
+  else if(!A.st||!A.ctl)body='<p class="note">이안이 기록을 불러오는 중…</p>';
+  else{
+    const st=A.st,ctl=A.ctl;
+    body=`<div class="row" style="justify-content:space-between"><h2 style="font-size:26px">${esc(studentName())}</h2>
+      ${A.students.length>1?`<select id="stuSel" aria-label="학생 선택">${A.students.map(s=>`<option value="${esc(s.uid)}"${s.uid===A.uid?" selected":""}>${esc(s.name||s.email||s.uid)}</option>`).join("")}</select>`:""}</div>
+    <div class="tabs scroll" role="tablist">${ADM_TABS.map(([k,l])=>`<button role="tab" aria-selected="${A.tab===k}" data-atab="${k}">${l}</button>`).join("")}</div>
+    ${{overview:admOverview,log:admLog,miss:admMiss,msg:admMsg,plan:admPlan,school:admSchool}[A.tab](st,ctl)}`;
+  }
+  app.innerHTML=head+`<div id="adm" class="adm">${body}</div>`;
+  Object.entries(keep).forEach(([id,v])=>{const el=document.getElementById(id);if(el&&id!=="stuSel"&&v!=="")el.value=v});
+  if(foc){const el=document.getElementById(foc);if(el&&/INPUT|TEXTAREA/.test(el.tagName))el.focus({preventScroll:true})}
+  bindAdmin();
+}
+function bindAdmin(){
+  const on=(sel,fn)=>{const el=$(sel);if(el)el.onclick=fn};
+  on("#toStudent",()=>{view="home";render();scrollTo(0,0)});
+  on("#admOut",()=>cloud.signOut());
+  on("#admRetry",()=>{adminReset();renderAdmin()});
+  const ss=$("#stuSel");if(ss)ss.onchange=()=>adminWatch(ss.value);
+  app.querySelectorAll("[data-atab]").forEach(b=>b.onclick=()=>{A.tab=b.dataset.atab;renderAdmin()});
+  on("#more",()=>{A.more+=30;renderAdmin()});
+  app.querySelectorAll("[data-addwrong]").forEach(b=>b.onclick=()=>{const k=b.dataset.addwrong,i=k.indexOf(":");
+    saveCtl(c=>{c.wrong=c.wrong.filter(x=>wkey(x.sid,x.w)!==k);c.wrong.push({sid:k.slice(0,i),w:k.slice(i+1),at:Date.now()})},"오답 노트에 다시 넣었어요")});
+  on("#msgSend",()=>{const t=$("#msgText").value.trim(),b=+$("#msgBonus").value||0;if(!t&&!b){toast("메시지를 입력해 주세요");return}
+    $("#msgText").value="";saveCtl(c=>c.msgs.push({id:"m"+Date.now(),t:Date.now(),text:t||"Bonus stars from Dad!",bonus:b}),"메시지를 보냈어요")});
+  app.querySelectorAll("[data-delmsg]").forEach(b=>b.onclick=()=>saveCtl(c=>c.msgs=c.msgs.filter(m=>m.id!==b.dataset.delmsg),"삭제했어요"));
+  on("#planStartGo",()=>{const id=$("#planStart").value;saveCtl(c=>c.startFrom=COURSE.findIndex(s=>s.id===id),"다음 학습 위치를 바꿨어요")});
+  on("#planStartClear",()=>saveCtl(c=>c.startFrom=0,"처음부터 순서대로 진행해요"));
+  on("#planSkipGo",()=>{const id=$("#planSkip").value;saveCtl(c=>{if(!c.skip.includes(id))c.skip.push(id)},"건너뛰기에 추가했어요")});
+  app.querySelectorAll("[data-unskip]").forEach(b=>b.onclick=()=>saveCtl(c=>c.skip=c.skip.filter(x=>x!==b.dataset.unskip),"건너뛰기를 풀었어요"));
+  on("#learnToggle",()=>saveCtl(c=>c.learnOff=!c.learnOff,"저장했어요"));
+  on("#writeToggle",()=>saveCtl(c=>c.writeOff=!c.writeOff,"저장했어요"));
+  on("#speakToggle",()=>saveCtl(c=>c.speakOff=!c.speakOff,"저장했어요"));
+  on("#revToggle",()=>{const today=brisDate(Date.now());saveCtl(c=>c.reviewOnly=c.reviewOnly===today?"":today,"저장했어요")});
+  on("#addWordGo",()=>{const v=$("#addWord").value.trim().toLowerCase();const w=allWords().find(x=>x.w.toLowerCase()===v);
+    if(!w){toast("단어장에 없는 단어예요. 학교 단어 탭에서 추가해 주세요");return}
+    $("#addWord").value="";saveCtl(c=>{c.wrong=c.wrong.filter(x=>wkey(x.sid,x.w)!==wkey(w.sid,w.w));c.wrong.push({sid:w.sid,w:w.w,at:Date.now()})},`'${w.w}'을(를) 오답 노트에 넣었어요`)});
+  app.querySelectorAll("[data-delwrong]").forEach(b=>b.onclick=()=>saveCtl(c=>c.wrong=c.wrong.filter(x=>wkey(x.sid,x.w)!==b.dataset.delwrong),"뺐어요"));
+  const sw=$("#schWords");if(sw){const upd=()=>{const n=parseSchool(sw.value).length;$("#schCount").textContent=n?`${n}단어`:""};sw.oninput=upd;upd()}
+  on("#schAdd",()=>{const words=parseSchool($("#schWords").value),title=$("#schTitle").value.trim()||"School words "+brisDate(Date.now());
+    if(!words.length){toast("단어를 한 줄에 하나씩 입력해 주세요");return}
+    $("#schWords").value="";$("#schTitle").value="";saveCtl(c=>c.school.push({id:"s"+Date.now(),title,at:Date.now(),words}),`${words.length}단어를 추가했어요`)});
+  app.querySelectorAll("[data-delsch]").forEach(b=>b.onclick=()=>saveCtl(c=>c.school=c.school.filter(s=>s.id!==b.dataset.delsch),"삭제했어요"));
+}
+
+try{loadVoices()}catch(e){}
+booted=true;
+render();
+try{cloud.init()}catch(e){console.warn(e)}
+</script>
+
+</body>
+</html>
