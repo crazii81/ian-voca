@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>이안이 공부방</title>
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+.tile{display:flex;gap:14px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;margin:12px 0;text-decoration:none;color:var(--ink)}
+.tile:hover{border-color:#C7CBD3}
+.tile .ic{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:700;flex:none}
+.tile .t{font-size:18px;font-weight:700}
+.tile .arrow{margin-left:auto;color:var(--mute);font-size:20px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="card"><p class="muted">불러오는 중…</p></div></div>
+<script type="module">
+import { backend, CONFIG } from "./backend.js";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const S = { user:null, err:"", math:null };
+const demoQ = backend.demo ? "?demo" : "";
+
+function streak(sessions){
+  const set = new Set(sessions.map(s=>s.date)); if(!set.size) return 0;
+  const fmt = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  const d=new Date(); if(!set.has(fmt(d))) d.setDate(d.getDate()-1);
+  let n=0; while(set.has(fmt(d))){ n++; d.setDate(d.getDate()-1); } return n;
+}
+function render(){
+  const app=$("#app");
+  if(!S.user){
+    app.innerHTML = `<div style="padding:48px 4px 0"><div class="label">STUDY ROOM</div><h2 style="font-size:30px;margin-top:4px">${esc(CONFIG.kidName)}이 공부방</h2>
+    <p class="muted" style="margin:8px 0 22px">수학 탐험과 영어 Word Hop을 한곳에서.</p>
+    <button class="pri big-btn" id="login">Google 계정으로 로그인</button>${S.err?`<div class="err">${esc(S.err)}</div>`:""}
+    <p class="muted" style="margin-top:16px">허용된 가족 계정만 사용할 수 있어요.</p></div>`;
+    $("#login").onclick = async () => { S.err=""; try{ S.user = await backend.login(); await loadMath(); }catch(e){ S.err="로그인하지 못했어요. 다시 시도해 주세요."; } render(); };
+    return;
+  }
+  const hour = new Date().getHours();
+  const hi = hour<12 ? "좋은 아침" : hour<18 ? "반가워" : "오늘도 수고했어";
+  const m = S.math;
+  const today = new Date(); const todayStr = today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");
+  const doneToday = m ? m.filter(s=>s.date===todayStr).length : 0;
+  app.innerHTML = `<div class="row between" style="padding:4px 2px"><div><div class="label">${today.toLocaleDateString("ko-KR",{month:"long",day:"numeric",weekday:"short"})}</div><h2 style="font-size:26px">${hi}, ${esc(CONFIG.kidName)}!</h2></div><button class="mini" id="logout">로그아웃</button></div>
+  ${backend.demo?`<div class="notice">데모 모드예요.</div>`:""}
+  <div class="card"><div class="row"><div class="stat"><b class="num">${m?streak(m):"–"}일</b><span>수학 연속 학습</span></div><div class="stat"><b class="num">${m?doneToday:"–"}</b><span>오늘 채점한 학습지</span></div><div class="stat"><b class="num">${m?m.length:"–"}</b><span>전체 학습지</span></div></div></div>
+  <a class="tile" href="math.html${demoQ}"><div class="ic" style="background:#4F46E5">Σ</div><div><div class="t">수학 탐험</div><div class="muted">학습지 채점 · 풀이 과정 · 실수 분석</div></div><span class="arrow">›</span></a>
+  <a class="tile" href="${esc(CONFIG.wordHopUrl)}"><div class="ic" style="background:#0E7490">Aa</div><div><div class="t">Word Hop</div><div class="muted">영어 단어 학습</div></div><span class="arrow">›</span></a>
+  ${S.err?`<div class="notice">${esc(S.err)}</div>`:""}
+  <p class="muted" style="text-align:center;margin-top:20px">${esc(S.user.email||"")}</p>`;
+  $("#logout").onclick = async () => { await backend.logout(); S.user=null; S.math=null; render(); };
+}
+async function loadMath(){
+  try { S.math = await backend.listSessions(); }
+  catch(e){ S.math=null; S.err = (e && e.code==="permission-denied") ? "이 계정은 공부방 기록에 접근할 수 없어요." : ""; }
+}
+(async () => {
+  try { S.user = await backend.currentUser(); } catch(_) {}
+  if (S.user) await loadMath();
+  render();
+  if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(()=>{});
+})();
+</script>
+</body>
+</html>
