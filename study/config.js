@@ -11,7 +11,7 @@ export const CONFIG = {
     appId: "1:513167044992:web:4578cc34668fa46f319165"
   },
 
-  workerUrl: "https://ian-math-grader.YOUR-SUBDOMAIN.workers.dev",
+  workerUrl: "https://ian-math-grader.swk810620.workers.dev",
   wordHopUrl: "../",   // study 폴더 바로 위가 Word Hop (crazii81.github.io/ian-voca/)
   kidName: "이안",
   grade: 4,
