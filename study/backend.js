@@ -80,7 +80,7 @@ const real = {
       });
     } catch(e){ throw { code: "network" }; }
     const data = await r.json().catch(() => null);
-    if (!r.ok) throw { code: (data && data.code) || ("http_" + r.status), message: data && data.error };
+    if (!r.ok){ if (data && data.detail) console.warn("grade error detail:", data.status, data.detail); throw { code: (data && data.code) || ("http_" + r.status), message: data && data.error, status: data && data.status }; }
     return data;
   }
 };

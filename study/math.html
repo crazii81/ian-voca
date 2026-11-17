@@ -180,7 +180,7 @@ async function grade(){
     S.progress.i=i; render();
     try{
       const bmp = await loadBitmap(S.files[i]);
-      const send = await canvasBlob(toCanvas(bmp,1800),0.88);
+      const send = await canvasBlob(toCanvas(bmp,1600),0.85);
       const res = await backend.grade(send, S.mentorId || "gauss");
       if(!res || !Array.isArray(res.problems) || !res.problems.length) throw {code:"empty"};
       const problems = res.problems.map(fixProblem);
@@ -197,7 +197,7 @@ async function grade(){
         : c==="busy" ? "무료 채점 사용량이 잠깐 꽉 찼어요. 몇 분 뒤에 다시 해 주세요."
         : c==="bad_image" ? "사진을 읽을 수 없어요. 다른 사진으로 해볼까요?"
         : c==="empty" ? "사진에서 문제를 찾지 못했어요. 학습지 전체가 잘 보이게 다시 찍어주세요."
-        : "채점 중에 문제가 생겼어요. 다시 시도해 주세요.";
+        : `채점 중에 문제가 생겼어요. 다시 시도해 주세요. (${c || "unknown"}${e && e.status ? " " + e.status : ""})`;
       if(["daily_limit","not_allowed","unauthorized","network","busy"].includes(c)) break;
     }
   }
