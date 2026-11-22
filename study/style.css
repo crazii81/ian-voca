@@ -96,3 +96,12 @@ input[type=text]:focus{outline:2px solid var(--acc);outline-offset:-1px}
 .mentor .era{font-size:12px;color:var(--sub);font-weight:500}
 .mentor .fact{font-size:14px;margin-top:4px;color:#374151}
 @media (prefers-reduced-motion: reduce){.prog i,.toast{animation:none}}
+.cmp{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start}
+.cmp>.panel{flex:1 1 220px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#fff}
+.cmp>.panel svg{width:100%;height:auto;display:block}
+.cmp>.stepper{flex:1.4 1 260px;margin:0}
+.bug{background:var(--badbg);color:#7C2D12;border-radius:10px;padding:8px 10px;margin-top:8px;font-size:14px}
+.spot{border:1px dashed var(--acc);border-radius:14px;padding:12px;margin:12px 0;background:var(--accbg)}
+.plan{border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0}
+.pl{font-size:14px;margin-top:6px}
+.pl span{display:inline-block;min-width:74px;font-size:12px;font-weight:600;color:var(--sub)}

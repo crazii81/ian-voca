@@ -97,7 +97,7 @@ async function setMentor(id){
 }
 
 /* ---------- stats (XP) ---------- */
-function xpOf(s){ const pd = s.problems.reduce((a,p)=>a+(p.practiceDone||0),0); return s.correct*10 + (s.total>0 && s.correct===s.total ? 30 : 0) + pd*15; }
+function xpOf(s){ const pd = s.problems.reduce((a,p)=>a+(p.practiceDone||0),0), bf = s.problems.filter(p=>p.bugFound).length; return s.correct*10 + (s.total>0 && s.correct===s.total ? 30 : 0) + pd*15 + bf*5; }
 function totalXP(){ return S.sessions.reduce((a,s)=>a+xpOf(s),0); }
 const LV = 300;
 function level(){ const x=totalXP(); return { lv:Math.floor(x/LV)+1, cur:x%LV, xp:x }; }
@@ -126,7 +126,9 @@ function pendingPractice(){
     if(p.status!=="wrong" && p.status!=="incomplete") continue;
     (p.practice||[]).forEach((q,i)=>{ if(!(p.practiceSolved||[]).includes(i)) out.push({s,p,i,q}); });
   }
-  return out.slice(0,3);
+  const w = {}; tagStats().forEach(t=>w[t.tag]=t.recent*10+t.total);
+  const score = x => Math.max(0, ...(x.p.tags||[]).map(t=>w[t]||0));
+  return out.map((x,o)=>({x,o})).sort((a,b)=>score(b.x)-score(a.x) || a.o-b.o).map(y=>y.x).slice(0,3);
 }
 
 /* ---------- image helpers ---------- */
@@ -157,6 +159,11 @@ function fixProblem(p){
   p.practiceDone = 0; p.practiceSolved = [];
   if(!["correct","wrong","incomplete","unclear"].includes(p.status)) p.status="unclear";
   const v = p.visual || {};
+  if(v.student_work && typeof v.student_work==="object"){
+    const sw=v.student_work, dg=x=>String(x??"").replace(/[^0-9]/g,"");
+    v.student_work = v.kind==="multiply" ? { result: dg(sw.result) }
+      : { quotient: dg(sw.quotient), rows: (Array.isArray(sw.rows)?sw.rows:[]).map(dg).filter(Boolean).slice(0,12) };
+  }
   let computed = null;
   if(v.kind==="long_division" && Number.isInteger(+v.dividend) && Number.isInteger(+v.divisor) && +v.divisor>0 && +v.dividend>0 && String(+v.dividend).length<=4){
     const q=Math.floor(v.dividend/v.divisor), r=v.dividend%v.divisor; computed = r ? `${q} … ${r}` : `${q}`;
@@ -208,45 +215,77 @@ async function grade(){
 
 /* ---------- visual frames ---------- */
 const INK="#111827", HOT=()=>M().color, HOTBG=()=>M().bg, GOOD="#15803D", GOODBG="#E8F6EC", FAINT="#9CA3AF";
-const NUMSTYLE = 'font-family:"IBM Plex Sans KR",sans-serif;font-weight:600;font-size:28px';
-function divFrames(dividend, divisor){
+const NUMSTYLE = "font-family:'IBM Plex Sans KR',sans-serif;font-weight:600;font-size:28px";
+const bugBox = msg => `<div class="bug">${msg}</div>`;
+function ianOf(p){
+  const v=p.visual||{}, sw=v.student_work||{}, n=nums(p.student);
+  if(p.status==="unclear") return null;
+  if(v.kind==="long_division"){
+    const q = sw.quotient || (n.length ? String(n[0]) : "");
+    if(!q && !(sw.rows||[]).length) return null;
+    const hasR = /…|나머지|\.\.\./.test(String(p.student||""));
+    return { q, rows: sw.rows||[], r: hasR && n.length>1 ? n[1] : (q ? 0 : null) };
+  }
+  if(v.kind==="multiply"){
+    const res = sw.result || (n.length ? String(n[0]) : "");
+    return res ? { res } : null;
+  }
+  return null;
+}
+function divFrames(dividend, divisor, ian){
   const D=String(dividend).split("").map(Number), n=D.length, steps=[];
   let cur=0, started=false;
   for(let i=0;i<n;i++){ cur=cur*10+D[i]; const q=Math.floor(cur/divisor); if(!started && q===0 && i<n-1) continue; started=true; steps.push({i,cur,q,prod:q*divisor,rem:cur-q*divisor}); cur-=q*divisor; }
   const Q=Math.floor(dividend/divisor), R=dividend%divisor;
   let r=2; steps.forEach(s=>{ s.prodRow=r; s.nextRow=r+1; r+=2; });
-  const X0=120, CW=38, W=Math.max(340, X0+n*CW+60), H=58+r*44;
+  const X0=96, CW=36, W=Math.max(300, X0+n*CW+40), H=58+r*44;
   const cx=c=>X0+c*CW+CW/2, ry=k=>48+k*44, el=[];
+  const crow=[];
   steps.forEach((s,k)=>{
     el.push({f:2*k,row:0,end:s.i,str:String(s.q)});
     el.push({f:2*k+1,row:s.prodRow,end:s.i,str:String(s.prod)});
     el.push({f:2*k+1,line:true,row:s.prodRow,from:s.i-String(s.cur).length+1,to:s.i});
+    crow.push({str:String(s.prod),end:s.i});
     const nx=steps[k+1];
-    if(nx) el.push({f:2*k+1,row:s.nextRow,end:nx.i,str:String(nx.cur),down:nx.i});
-    else el.push({f:2*k+1,row:s.nextRow,end:s.i,str:String(s.rem)});
+    if(nx){ el.push({f:2*k+1,row:s.nextRow,end:nx.i,str:String(nx.cur),down:nx.i}); crow.push({str:String(nx.cur),end:nx.i}); }
+    else { el.push({f:2*k+1,row:s.nextRow,end:s.i,str:String(s.rem)}); crow.push({str:String(s.rem),end:s.i}); }
   });
+  /* ---- compare with the kid's own work ---- */
+  const bugs=[];
+  if(ian){
+    const q=ian.q||"";
+    const at=c=>{ const idx=q.length-1-(n-1-c); return idx>=0 && idx<q.length ? q[idx] : null; };
+    if(q) steps.forEach((s,k)=>{ const d=at(s.i); if(d===null || +d!==s.q)
+      bugs.push({f:2*k, mark:{row:0,from:s.i,to:s.i}, msg:`몫의 ${placeName(n-1-s.i)}의 자리 · 내가 쓴 숫자 <b>${d===null?"(빈칸)":d}</b> → 바른 숫자 <b>${s.q}</b>`}); });
+    (ian.rows||[]).forEach((v,j)=>{ const c=crow[j]; if(!c || +v===+c.str) return;
+      const s=steps[Math.floor(j/2)], end=c.end;
+      bugs.push({f:2*Math.floor(j/2)+1, mark:{row:2+j,from:end-v.length+1,to:end},
+        msg: j%2===0 ? `곱한 값 · 내가 쓴 숫자 <b>${v}</b> → 바른 값 <b>${c.str}</b> (${s.q} × ${divisor} = ${s.prod})` : `빼고 내린 값 · 내가 쓴 숫자 <b>${v}</b> → 바른 값 <b>${c.str}</b>`}); });
+    if(ian.r!=null && ian.r!==R && !bugs.length)
+      bugs.push({f:2*steps.length-1, mark:null, msg:`나머지 · 내가 쓴 수 <b>${ian.r}</b> → 바른 나머지 <b>${R}</b> (나머지는 ${divisor}보다 작아야 해요)`});
+  }
   const curPos = k => k===0 ? {row:1,from:0,to:steps[0].i} : {row:steps[k-1].nextRow,from:steps[k].i-String(steps[k].cur).length+1,to:steps[k].i};
+  const frame0 = (np) => `<text x="${X0-20}" y="${ry(1)}" text-anchor="end" style="${NUMSTYLE}${np?";pointer-events:none":""}" fill="${INK}">${divisor}</text>
+    <path d="M${X0-10} ${ry(1)-32} Q${X0+3} ${ry(1)-12} ${X0-10} ${ry(1)+10}" fill="none" stroke="${INK}" stroke-width="2"/>
+    <line x1="${X0-10}" y1="${ry(1)-32}" x2="${X0+n*CW+6}" y2="${ry(1)-32}" stroke="${INK}" stroke-width="2"/>`
+    + D.map((d,i)=>`<text x="${cx(i)}" y="${ry(1)}" text-anchor="middle" style="${NUMSTYLE}${np?";pointer-events:none":""}" fill="${INK}">${d}</text>`).join("");
   const nf = steps.length*2+1, frames=[];
   for(let f=0; f<nf; f++){
-    let g=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${dividend} 나누기 ${divisor} 세로셈">`;
+    let g=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${dividend} 나누기 ${divisor} 바른 풀이">`;
     const k=Math.floor(f/2), isA=f%2===0, final=f===nf-1;
-    if(!final && isA){ const c=curPos(k); g+=`<rect x="${cx(c.from)-CW/2+2}" y="${ry(c.row)-30}" width="${(c.to-c.from+1)*CW-4}" height="40" rx="8" fill="${HOTBG()}"/><rect x="${X0-58}" y="${ry(1)-30}" width="40" height="40" rx="8" fill="${HOTBG()}"/>`; }
+    if(!final && isA){ const c=curPos(k); g+=`<rect x="${cx(c.from)-CW/2+2}" y="${ry(c.row)-30}" width="${(c.to-c.from+1)*CW-4}" height="40" rx="8" fill="${HOTBG()}"/><rect x="${X0-54}" y="${ry(1)-30}" width="38" height="40" rx="8" fill="${HOTBG()}"/>`; }
     if(final) g+=`<rect x="${X0}" y="${ry(0)-32}" width="${n*CW}" height="42" rx="8" fill="${GOODBG}"/>`;
-    g+=`<text x="${X0-22}" y="${ry(1)}" text-anchor="end" style="${NUMSTYLE}" fill="${INK}">${divisor}</text>`;
-    g+=`<path d="M${X0-12} ${ry(1)-32} Q${X0+2} ${ry(1)-12} ${X0-12} ${ry(1)+10}" fill="none" stroke="${INK}" stroke-width="2"/>`;
-    g+=`<line x1="${X0-12}" y1="${ry(1)-32}" x2="${X0+n*CW+8}" y2="${ry(1)-32}" stroke="${INK}" stroke-width="2"/>`;
-    D.forEach((d,i)=>{ g+=`<text x="${cx(i)}" y="${ry(1)}" text-anchor="middle" style="${NUMSTYLE}" fill="${INK}">${d}</text>`; });
+    g+=frame0();
     for(const e of el){
       if(e.f>f) continue;
-      const hot = e.f===f && !final;
-      const color = hot ? HOT() : (final && e.row===0 ? GOOD : INK);
+      const hot = e.f===f && !final, color = hot ? HOT() : (final && e.row===0 ? GOOD : INK);
       if(e.line){ g+=`<line x1="${cx(e.from)-CW/2+3}" y1="${ry(e.row)+12}" x2="${cx(e.to)+CW/2-3}" y2="${ry(e.row)+12}" stroke="${hot?HOT():INK}" stroke-width="2"/>`; continue; }
       for(let j=0;j<e.str.length;j++){ const c=e.end-e.str.length+1+j; g+=`<text x="${cx(c)}" y="${ry(e.row)}" text-anchor="middle" style="${NUMSTYLE}" fill="${color}">${e.str[j]}</text>`; }
       if(e.down!==undefined && hot) g+=`<path d="M${cx(e.down)} ${ry(1)+12} L${cx(e.down)} ${ry(e.row)-34}" stroke="${HOT()}" stroke-width="1.6" stroke-dasharray="4 4" fill="none"/><path d="M${cx(e.down)-5} ${ry(e.row)-39} L${cx(e.down)} ${ry(e.row)-32} L${cx(e.down)+5} ${ry(e.row)-39}" stroke="${HOT()}" stroke-width="1.6" fill="none"/>`;
     }
     g+="</svg>";
     let t;
-    if(final) t = `<b>정답 ${dividend} ÷ ${divisor} = ${Q}${R?` … ${R}`:""}</b><br><span class="muted">검산 ${divisor} × ${Q}${R?` + ${R}`:""} = ${dividend} ✓</span>`;
+    if(final) t = `<b>정답 ${dividend} ÷ ${divisor} = ${Q}${R?` … ${R}`:""}</b><br><span class="muted">검산 ${divisor} × ${Q}${R?` + ${R}`:""} = ${dividend} ✓ · 몫이 ${dividend}의 절반·10배쯤인지 어림해 보는 것도 좋아요.</span>`;
     else { const s=steps[k], pl=placeName(n-1-s.i);
       if(isA){
         const pre = (k===0 && s.i>0) ? `앞자리 ${D.slice(0,s.i).join("")}에는 ${divisor}가 들어갈 수 없으니 ${s.cur}까지 함께 봐요. ` : "";
@@ -256,44 +295,91 @@ function divFrames(dividend, divisor){
         const nx=steps[k+1];
         t = `<b>곱하고 빼기</b> · ${s.q} × ${divisor} = ${s.prod}, ${s.cur} − ${s.prod} = <b>${s.rem}</b>` + (nx ? `<br>다음 숫자 <b>${D[nx.i]}</b> 내려 쓰기 ↓` : (s.rem ? `<br>더 내릴 숫자가 없으니 나머지는 <b>${s.rem}</b>` : `<br>남는 수 없이 나누어떨어져요`));
       } }
+    t += bugs.filter(b=>b.f===f).map(b=>bugBox(b.msg)).join("");
     frames.push({html:g,text:t});
   }
-  return frames;
+  /* ---- the kid's own work, same layout, tappable digits ---- */
+  const ianSvg = (key, si, pi, state) => {
+    if(!ian) return "";
+    const rows = ian.rows||[], nr = 2+rows.length, h = 58+Math.max(2,nr)*44;
+    let g=`<svg viewBox="0 0 ${W} ${h}" role="img" aria-label="내 풀이">`;
+    const owner = (row,c) => bugs.findIndex(b=>b.mark && b.mark.row===row && c>=b.mark.from && c<=b.mark.to);
+    const cell = (row,c,ch) => { const b=owner(row,c);
+      return `<rect x="${cx(c)-CW/2}" y="${ry(row)-32}" width="${CW}" height="42" fill="transparent" style="cursor:pointer" data-act="bugtap" data-k="${key}" data-s="${si}" data-i="${pi}" data-b="${b}"/>`
+        + `<text x="${cx(c)}" y="${ry(row)}" text-anchor="middle" style="${NUMSTYLE};pointer-events:none" fill="${INK}">${ch}</text>`; };
+    g+=frame0(true);
+    const q=ian.q||""; for(let j=0;j<q.length;j++){ const c=n-q.length+j; if(c>=0) g+=cell(0,c,q[j]); }
+    rows.forEach((v,j)=>{ const end = crow[j] ? crow[j].end : n-1;
+      for(let t=0;t<v.length;t++){ const c=end-v.length+1+t; if(c>=0) g+=cell(2+j,c,v[t]); }
+      if(j%2===0) g+=`<line x1="${cx(Math.max(0,end-v.length+1))-CW/2+3}" y1="${ry(2+j)+12}" x2="${cx(end)+CW/2-3}" y2="${ry(2+j)+12}" stroke="${INK}" stroke-width="2" style="pointer-events:none"/>`; });
+    bugs.forEach((b,bi)=>{ if(!b.mark || !(state.revealed || state.found.has(bi))) return;
+      const x1=cx(b.mark.from)-CW/2+2, w=(b.mark.to-b.mark.from+1)*CW-4;
+      g+=`<rect x="${x1}" y="${ry(b.mark.row)-32}" width="${w}" height="42" rx="21" fill="none" stroke="#C2410C" stroke-width="2.4" style="pointer-events:none"/>`; });
+    return g+"</svg>";
+  };
+  return { frames, bugs, ianSvg };
 }
-function mulFrames(a,b){
+function mulFrames(a,b,ian){
   const A=String(a).split("").map(Number), m=A.length, steps=[];
   let carry=0;
   for(let j=m-1;j>=0;j--){ const base=A[j]*b, p=base+carry; steps.push({j,base,cin:carry,p,digit:p%10,cout:Math.floor(p/10)}); carry=Math.floor(p/10); }
-  const X0=70, CW=40, W=Math.max(340,X0+(m+1)*CW+40), H=240;
-  const cx=c=>X0+c*CW+CW/2, Y={c:44,a:98,b:146,line:162,r:206}, frames=[];
+  const X0=50, CW=38, W=Math.max(300,X0+(m+1)*CW+30), H=240;
+  const cx=c=>X0+c*CW+CW/2, Y={c:44,a:98,b:146,line:162,r:206};
+  const R=String(a*b);
+  const bugs=[];
+  if(ian && ian.res){
+    const res=ian.res;
+    const dAt=(str,c)=>{ const idx=str.length-1-(m-c); return idx>=0 && idx<str.length ? str[idx] : null; };
+    for(let c=0;c<=m;c++){
+      const x=dAt(res,c), y=dAt(R,c); if(x===y || (x===null && y===null)) continue;
+      const k = c>=1 ? m-c : m-1, s=steps[k], pl = c>=1 ? placeName(m-c) : placeName(m);
+      let why = "";
+      if(c>=1 && s.cin>0 && x!==null && +x===s.base%10) why = ` · 올려 둔 <b>${s.cin}</b> 더하기를 잊었어요`;
+      bugs.push({f:k, mark:{row:"r",from:c,to:c}, msg:`${pl}의 자리 · 내가 쓴 숫자 <b>${x===null?"(빈칸)":x}</b> → 바른 숫자 <b>${y===null?"(없음)":y}</b>${why}`});
+    }
+  }
+  const head = () => A.map((d,i)=>`<text x="${cx(i+1)}" y="${Y.a}" text-anchor="middle" style="${NUMSTYLE};pointer-events:none" fill="${INK}">${d}</text>`).join("")
+    + `<text x="${cx(0)}" y="${Y.b}" text-anchor="middle" style="${NUMSTYLE};pointer-events:none" fill="${INK}">×</text><text x="${cx(m)}" y="${Y.b}" text-anchor="middle" style="${NUMSTYLE};pointer-events:none" fill="${INK}">${b}</text>`
+    + `<line x1="${cx(0)-CW/2}" y1="${Y.line}" x2="${cx(m)+CW/2}" y2="${Y.line}" stroke="${INK}" stroke-width="2"/>`;
+  const frames=[];
   for(let f=0; f<=steps.length; f++){
     const final = f===steps.length;
-    let g=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${a} 곱하기 ${b} 세로셈">`;
+    let g=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${a} 곱하기 ${b} 바른 풀이">`;
     if(!final){ const s=steps[f]; g+=`<rect x="${cx(s.j+1)-CW/2+2}" y="${Y.a-30}" width="${CW-4}" height="86" rx="8" fill="${HOTBG()}"/><rect x="${cx(m)-CW/2+2}" y="${Y.b-30}" width="${CW-4}" height="40" rx="8" fill="${HOTBG()}"/>`;
       if(s.cin) g+=`<circle cx="${cx(s.j+1)}" cy="${Y.c-7}" r="14" fill="none" stroke="${HOT()}" stroke-width="2"/>`; }
     else g+=`<rect x="${cx(0)-CW/2}" y="${Y.r-32}" width="${(m+1)*CW}" height="44" rx="8" fill="${GOODBG}"/>`;
-    A.forEach((d,i)=>{ g+=`<text x="${cx(i+1)}" y="${Y.a}" text-anchor="middle" style="${NUMSTYLE}" fill="${INK}">${d}</text>`; });
-    g+=`<text x="${cx(0)}" y="${Y.b}" text-anchor="middle" style="${NUMSTYLE}" fill="${INK}">×</text><text x="${cx(m)}" y="${Y.b}" text-anchor="middle" style="${NUMSTYLE}" fill="${INK}">${b}</text>`;
-    g+=`<line x1="${cx(0)-CW/2}" y1="${Y.line}" x2="${cx(m)+CW/2}" y2="${Y.line}" stroke="${INK}" stroke-width="2"/>`;
+    g+=head();
     steps.forEach((s,k)=>{
       if(k>f || (k===f && final)) return;
       const hot = k===f, colr = hot ? HOT() : (final ? GOOD : INK);
       g+=`<text x="${cx(s.j+1)}" y="${Y.r}" text-anchor="middle" style="${NUMSTYLE}" fill="${colr}">${s.digit}</text>`;
       if(s.cout){
-        if(s.j>0) g+=`<text x="${cx(s.j)}" y="${Y.c}" text-anchor="middle" style='font-family:"IBM Plex Sans KR",sans-serif;font-weight:600;font-size:18px' fill="${hot?HOT():FAINT}">${s.cout}</text>`;
+        if(s.j>0) g+=`<text x="${cx(s.j)}" y="${Y.c}" text-anchor="middle" style="font-family:'IBM Plex Sans KR',sans-serif;font-weight:600;font-size:18px" fill="${hot?HOT():FAINT}">${s.cout}</text>`;
         else g+=`<text x="${cx(0)}" y="${Y.r}" text-anchor="middle" style="${NUMSTYLE}" fill="${colr}">${s.cout}</text>`;
       }
       if(hot && s.cout && s.j>0) g+=`<path d="M${cx(s.j+1)-4} ${Y.r-34} Q${cx(s.j+1)-18} ${Y.c+20} ${cx(s.j)+8} ${Y.c+6}" fill="none" stroke="${HOT()}" stroke-width="1.6" stroke-dasharray="4 4"/>`;
     });
     g+="</svg>";
     let t;
-    if(final) t=`<b>정답 ${a} × ${b} = ${a*b}</b><br><span class="muted">올린 숫자는 작게 쓰고 동그라미, 다음 자리에서 반드시 더하기.</span>`;
+    if(final) t=`<b>정답 ${a} × ${b} = ${a*b}</b><br><span class="muted">어림하기: ${a}는 약 ${Math.round(a/100)*100}, × ${b} 하면 약 ${Math.round(a/100)*100*b}. 답이 그 근처인지 확인!</span>`;
     else { const s=steps[f], pl=placeName(m-1-s.j);
       t=`<b>${pl}의 자리</b> · ${A[s.j]} × ${b} = ${s.base}` + (s.cin ? `, 올려 둔 <b>${s.cin}</b> 더하면 ${s.p}` : "") +
         (s.j>0 ? (s.cout ? `<br>→ <b>${s.digit}</b> 쓰고, <b>${s.cout}</b> 윗자리로 올리기 ↑` : `<br>→ <b>${s.digit}</b> 쓰기`) : `<br>→ <b>${s.p}</b> 그대로 쓰기`); }
+    t += bugs.filter(x=>x.f===f).map(x=>bugBox(x.msg)).join("");
     frames.push({html:g,text:t});
   }
-  return frames;
+  const ianSvg = (key, si, pi, state) => {
+    if(!ian || !ian.res) return "";
+    let g=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="내 풀이">`+head();
+    const res=ian.res;
+    for(let j=0;j<res.length;j++){ const c=m-res.length+1+j; if(c<0) continue;
+      const bi=bugs.findIndex(x=>x.mark.from===c);
+      g+=`<rect x="${cx(c)-CW/2}" y="${Y.r-32}" width="${CW}" height="42" fill="transparent" style="cursor:pointer" data-act="bugtap" data-k="${key}" data-s="${si}" data-i="${pi}" data-b="${bi}"/><text x="${cx(c)}" y="${Y.r}" text-anchor="middle" style="${NUMSTYLE};pointer-events:none" fill="${INK}">${res[j]}</text>`; }
+    bugs.forEach((x,bi)=>{ if(!(state.revealed||state.found.has(bi))) return; const c=x.mark.from;
+      g+=`<rect x="${cx(c)-CW/2+2}" y="${Y.r-32}" width="${CW-4}" height="42" rx="18" fill="none" stroke="#C2410C" stroke-width="2.4" style="pointer-events:none"/>`; });
+    return g+"</svg>";
+  };
+  return { frames, bugs, ianSvg };
 }
 function stepFrames(steps){
   steps = (steps||[]).filter(s=>s && (s.expr||s.label)).slice(0,5);
@@ -309,28 +395,61 @@ function stepFrames(steps){
     const s=steps[f];
     frames.push({html:h,text: f===steps.length-1 ? `<b>마지막 단계</b> · 답은 ${esc(s.result)}` : `<b>STEP ${f+1}</b> · ${esc(s.label)}`});
   }
-  return frames;
+  return { frames, bugs:[], ianSvg:()=>"" };
 }
-function framesFor(v){
-  if(!v) return null;
-  if(v.kind==="long_division") return divFrames(+v.dividend, +v.divisor);
-  if(v.kind==="multiply") return mulFrames(+v.a, +v.b);
+function modelFor(p){
+  const v=p.visual; if(!v) return null;
+  if(v.kind==="long_division") return divFrames(+v.dividend, +v.divisor, ianOf(p));
+  if(v.kind==="multiply") return mulFrames(+v.a, +v.b, ianOf(p));
   if(v.kind==="steps") return stepFrames(v.steps);
   return null;
 }
-const STEPPERS = {};
-function stepperBox(key, v){
-  if(!STEPPERS[key]){ const fr=framesFor(v); if(!fr||!fr.length) return ""; STEPPERS[key]={frames:fr,i:0}; }
-  return `<div class="stepper" id="st-${key}">${stepperInner(key)}</div>`;
+const STEPPERS = {}, MODELS = {}, BUGS = {};
+function compareBox(key, s, i, p){
+  if(!MODELS[key]) MODELS[key] = modelFor(p);
+  const md = MODELS[key]; if(!md || !md.frames || !md.frames.length) return "";
+  if(!STEPPERS[key]) STEPPERS[key] = { frames: md.frames, i: 0 };
+  const marked = md.bugs.map((b,bi)=>b.mark?bi:-1).filter(bi=>bi>=0);
+  const st = BUGS[key] || (BUGS[key] = { found:new Set(), revealed: !!p.bugDone, msg:"" });
+  const stepper = `<div class="stepper" id="st-${key}">${stepperInner(key)}</div>`;
+  if(!marked.length) return stepper;  // 비교할 내 풀이가 없으면 바른 풀이만
+  const done = st.revealed || marked.every(bi=>st.found.has(bi));
+  const panel = `<div class="panel"><div class="row between"><span class="label">내 풀이</span>${done?`<span class="pill bad">틀린 곳 ${marked.length}</span>`:""}</div>${md.ianSvg(key, s.id, i, st)}</div>`;
+  if(!done){
+    return `<div class="spot"><div class="row between"><b>먼저 실수를 찾아볼까?</b><span class="pill acc">찾으면 +5 XP</span></div>
+      <p style="margin:6px 0 10px;font-size:15px">바른 풀이를 보기 전에, 내 풀이에서 이상한 숫자를 직접 눌러봐. 틀린 곳은 <b>${marked.length}군데</b>야.</p>
+      <div class="cmp">${panel}</div>
+      ${st.msg?`<div class="fb ${st.msgOk?"ok":"no"}" style="margin:8px 0 0">${st.msg}</div>`:""}
+      <div style="text-align:right;margin-top:6px"><button class="ghost" data-act="bugreveal" data-k="${key}" data-s="${s.id}" data-i="${i}">모르겠어, 바로 보여줘</button></div></div>`;
+  }
+  return `<div class="cmp" style="margin-top:12px">${panel}${stepper}</div>`;
 }
 function stepperInner(key){
   const st=STEPPERS[key], fr=st.frames[st.i];
-  return `<div class="row between"><span class="label" style="color:var(--acc)">풀이 과정 보기</span><span class="dots">${st.frames.map((_,k)=>`<i class="${k===st.i?"on":""}"></i>`).join("")}</span></div>
+  return `<div class="row between"><span class="label" style="color:var(--acc)">바른 풀이</span><span class="dots">${st.frames.map((_,k)=>`<i class="${k===st.i?"on":""}"></i>`).join("")}</span></div>
   <div style="margin-top:6px">${fr.html}</div><div class="cap">${fr.text}</div>
   <div class="row between"><button class="mini" data-act="stprev" data-k="${key}" ${st.i===0?"disabled":""}>이전</button>
   ${S.tts?`<button class="mini" data-act="stsay" data-k="${key}">읽어주기</button>`:""}
   <button class="mini pri" data-act="stnext" data-k="${key}">${st.i===st.frames.length-1?"처음부터":"다음"}</button></div>`;
 }
+
+/* ---------- next actions per mistake type ---------- */
+const ACTIONS = {
+  "0 처리":      { habit:"나눠지는 수에 0이 있으면 동그라미 치고 “0 ÷ □ = 0”을 소리 내어 말하기", drill:"0이 들어간 나눗셈 (60÷3, 80÷4, 90÷3)", parent:"답을 쓴 뒤 ‘몫이 몇 자리 수여야 하지?’ 하고 자릿수부터 같이 세어보기" },
+  "받아올림 실수": { habit:"올린 숫자는 작게 쓰고 동그라미, 다음 자리에서 더했으면 ✓ 표시", drill:"받아올림이 2번 있는 곱셈 (287×6, 365×3)", parent:"어림하기 습관: 287×6이면 ‘300×6=1800쯤’ 먼저 말해보기" },
+  "받아내림 실수": { habit:"빌려온 자리는 사선으로 지우고 바뀐 숫자를 위에 적기", drill:"받아내림이 있는 뺄셈 5문제", parent:"10원짜리 동전 바꾸기 놀이로 ‘빌려오기’ 설명" },
+  "구구단 실수":   { habit:"헷갈리는 단을 카드로 만들어 하루 2분 빠르게 말하기", drill:"틀린 단만 모은 구구단 10문제", parent:"차 안에서 그 단만 퀴즈로 주고받기" },
+  "자리 맞추기":   { habit:"세로셈은 모눈 칸에 한 칸에 한 숫자씩", drill:"세로셈 옮겨 쓰기 연습 5문제", parent:"모눈 노트를 쓰게 해주기" },
+  "몫 자리":       { habit:"몫을 쓰기 전에 ‘어느 자리부터 나눠지지?’ 먼저 표시", drill:"앞자리가 나누는 수보다 작은 나눗셈 (25÷3, 48÷6)", parent:"몫이 몇 자리 수인지 어림부터 같이 말해보기" },
+  "나머지 실수":   { habit:"나머지는 나누는 수보다 작은지 꼭 확인하고, 나누는 수 × 몫 + 나머지로 검산", drill:"나머지가 있는 나눗셈 5문제 + 검산", parent:"사탕 나눠 담기로 ‘남는 것’ 직접 해보기" },
+  "옮겨쓰기 실수": { habit:"문제 숫자를 옮긴 뒤 손가락으로 한 번 짚어 확인", drill:"옮겨 쓰고 확인하는 계산 5문제", parent:"서두르지 않아도 된다고 말해주기, 속도보다 정확도 칭찬" },
+  "문제 잘못 읽음": { habit:"문제의 숫자와 ‘몇 개씩/모두/남은’ 같은 말에 밑줄 긋기", drill:"문장제 3문제 밑줄 긋기부터", parent:"문제를 소리 내어 읽게 하기" },
+  "식 미완성":     { habit:"문장제는 ‘식 → 계산 → 답+단위’ 3칸을 다 채웠는지 체크", drill:"식과 답을 모두 쓰는 문장제 3문제", parent:"답이 맞아도 식을 끝까지 썼을 때 따로 칭찬하기" },
+  "연산 선택":     { habit:"‘똑같이 나누어/~씩’은 나눗셈, ‘모두/몇 배’는 곱셈 신호어 찾기", drill:"신호어 찾기 문장제 5문제", parent:"실생활 상황으로 ‘이건 곱하기야 나누기야?’ 퀴즈" },
+  "단위 변환":     { habit:"계산 전에 단위를 맞추기 (1시간 = 60분, 1kg = 1000g)", drill:"단위 바꾸기 5문제", parent:"요리·시계 볼 때 단위 바꾸기 같이 해보기" },
+  "빈칸/미완성":   { habit:"제출 전 빈칸 0개인지 한 번 훑어보기", drill:"시간 재지 않고 끝까지 풀기", parent:"시간보다 끝까지 푼 것을 칭찬하기" },
+  "기타":         { habit:"다 풀고 1분 검산 시간 갖기", drill:"틀린 문제 다시 풀기", parent:"틀린 문제를 같이 보며 ‘어디서 달라졌을까?’ 묻기" }
+};
 
 /* ---------- render ---------- */
 function render(){
@@ -368,7 +487,7 @@ function homeView(){
   <div class="card"><div class="row" style="align-items:flex-start">${avatar(m)}<div style="flex:1"><div style="font-weight:700">${m.name} <span class="muted" style="font-weight:500">· 멘토</span></div><div class="say" style="margin-top:6px">${esc(m.hello)}</div></div></div>
   <div class="row" style="margin-top:14px"><div class="stat"><b class="num">Lv.${L.lv}</b><span>${L.xp} XP</span><div class="lvl"><i style="width:${L.cur/LV*100}%"></i></div></div><div class="stat"><b class="num">${st}일</b><span>연속 학습</span></div><div class="stat"><b class="num">${S.sessions.length}</b><span>채점한 학습지</span></div></div>
   <button class="pri big-btn" style="margin-top:14px" data-act="tab" data-t="snap">학습지 채점하기</button></div>`;
-  if(ts.length) h+=`<div class="card"><div class="row between"><h3>집중 연습</h3><span class="pill warn">반복 실수</span></div><p style="margin:8px 0 0">최근 2주 동안 <b>${ts.map(t=>esc(t.tag)).join(", ")}</b> 실수가 3번 이상 나왔어. 아래 미션으로 끝내버리자.</p></div>`;
+  if(ts.length) h+=`<div class="card"><div class="row between"><h3>집중 연습</h3><span class="pill warn">반복 실수</span></div><p style="margin:8px 0 0">최근 2주 동안 <b>${ts.map(t=>esc(t.tag)).join(", ")}</b> 실수가 3번 이상 나왔어. 아래 미션으로 끝내버리자.</p><div class="note tip" style="margin-bottom:0"><b>이번 주 습관</b> · ${esc((ACTIONS[ts[0].tag]||ACTIONS["기타"]).habit)}</div></div>`;
   if(pend.length){ h+=`<div class="card"><div class="row between"><h3>오늘의 미션</h3><span class="pill acc">+15 XP</span></div><p class="muted" style="margin:4px 0 6px">지난번 틀린 문제와 같은 유형이야.</p>`; pend.forEach(x=>h+=practiceRow(x.s,x.p,x.i,x.q)); h+=`</div>`; }
   const recent=S.sessions.slice(0,3);
   if(recent.length){ h+=`<div class="card"><h3>최근 채점</h3>`; recent.forEach(s=>h+=histRow(s)); h+=`</div>`; }
@@ -425,7 +544,7 @@ function wrongCard(s,p,i){
   if(p.explain) h+=`<div class="note exp"><b>설명</b> · ${esc(p.explain)}${S.tts?` <button class="mini" style="margin-left:4px" data-act="say" data-text="${esc(p.explain)}">읽어주기</button>`:""}</div>`;
   if(p.praise) h+=`<div class="muted">잘한 점 · ${esc(p.praise)}</div>`;
   if((p.tags||[]).length) h+=`<div class="chips">${p.tags.map(t=>`<span class="pill">#${esc(t)}</span>`).join("")}</div>`;
-  h+=stepperBox(key, p.visual);
+  h+=compareBox(key, s, i, p);
   if((p.practice||[]).length){ h+=`<div style="margin-top:12px"><div class="row between"><b>다시 도전</b><span class="pill acc">문제당 +15 XP</span></div>`; p.practice.forEach((q,j)=>h+=practiceRow(s,p,j,q)); h+=`</div>`; }
   if(p.status!=="unclear") h+=`<div style="text-align:right"><button class="ghost" data-act="flip" data-s="${s.id}" data-i="${i}">사실 맞았어요 (채점 수정)</button></div>`;
   return h+`</div>`;
@@ -467,8 +586,18 @@ function weakView(){
     h+=`</div>`;
   });
   h+=`</div>`;
-  const top = ts.filter(t=>t.recent>=3)[0];
-  if(top) h+=`<div class="card"><h3>대화 가이드</h3><p style="margin:8px 0">"${KID}아, 요즘 <b>${esc(top.tag)}</b>에서 자꾸 걸리던데, 오늘 미션 3개만 같이 끝내볼까?"</p><p class="muted">실수를 지적하기보다, 스스로 실수를 찾아낸 순간을 칭찬해 주세요.</p></div>`;
+  const focus = ts.filter(t=>t.recent>=1).slice(0,2);
+  if(focus.length){
+    const found = S.sessions.reduce((a,s)=>a+s.problems.filter(p=>p.bugFound).length,0), shown = S.sessions.reduce((a,s)=>a+s.problems.filter(p=>p.bugDone).length,0);
+    h+=`<div class="card"><h3>이번 주 다음 행동</h3><p class="muted" style="margin:4px 0 8px">최근 2주에 가장 많이 나온 실수부터 잡아요.</p>`;
+    focus.forEach(t=>{ const A=ACTIONS[t.tag]||ACTIONS["기타"];
+      h+=`<div class="plan"><div class="row between"><b>${esc(t.tag)}</b><span class="pill ${t.recent>=3?"warn":""}">최근 ${t.recent}번</span></div>
+      <div class="pl"><span>${esc(KID)}이 습관</span>${esc(A.habit)}</div>
+      <div class="pl"><span>연습</span>${esc(A.drill)} · 홈의 ‘오늘의 미션’에 먼저 나와요</div>
+      <div class="pl"><span>부모님</span>${esc(A.parent)}</div></div>`; });
+    h+=`<div class="pl" style="margin-top:6px"><span>스스로 찾기</span>틀린 문제 ${shown}개 중 ${found}개는 ${esc(KID)}이가 직접 실수를 찾아냈어요.</div>`;
+    h+=`<p class="muted" style="margin:10px 0 0">대화 팁: "요즘 <b>${esc(focus[0].tag)}</b>에서 자꾸 걸리던데, 오늘 미션 3개만 같이 끝내볼까?" 실수를 지적하기보다 스스로 찾아낸 순간을 칭찬해 주세요.</p></div>`;
+  }
   return h;
 }
 function meView(){
@@ -518,6 +647,18 @@ document.getElementById("app").addEventListener("click", async e=>{
   else if(a==="open"){ if(e.target.closest("button")) return; S.view={type:"result",ids:[t.dataset.id]}; render(); window.scrollTo(0,0); }
   else if(a==="jump"){ const el=document.getElementById("p-"+t.dataset.id); if(el) el.scrollIntoView({behavior:"smooth",block:"center"}); }
   else if(a==="stnext"||a==="stprev"){ const k=t.dataset.k, st=STEPPERS[k]; st.i = a==="stnext" ? (st.i+1)%st.frames.length : Math.max(0,st.i-1); document.getElementById("st-"+k).innerHTML=stepperInner(k); }
+  else if(a==="bugtap"){
+    const k=t.dataset.k, st=BUGS[k], md=MODELS[k], bi=+t.dataset.b; if(!st||!md) return;
+    const s=find(sid), p=s.problems[+t.dataset.i];
+    const marked = md.bugs.map((b,x)=>b.mark?x:-1).filter(x=>x>=0);
+    if(bi>=0 && md.bugs[bi].mark){
+      st.found.add(bi);
+      if(marked.every(x=>st.found.has(x))){ p.bugFound=true; p.bugDone=true; queueSave(s); toast("찾았다! +5 XP"); st.msg=""; }
+      else { st.msg=`찾았어! 아직 ${marked.length-[...st.found].filter(x=>marked.includes(x)).length}군데 더 있어.`; st.msgOk=true; }
+    } else { st.msg="그 숫자는 맞게 썼어. 다른 곳을 찾아봐!"; st.msgOk=false; }
+    render();
+  }
+  else if(a==="bugreveal"){ const k=t.dataset.k, s=find(sid), p=s.problems[+t.dataset.i]; if(BUGS[k]) BUGS[k].revealed=true; p.bugDone=true; queueSave(s); render(); }
   else if(a==="stsay"){ const st=STEPPERS[t.dataset.k]; say(st.frames[st.i].text); }
   else if(a==="say") say(t.dataset.text);
   else if(a==="tag"){ S.openTag = S.openTag===t.dataset.t ? null : t.dataset.t; render(); }
