@@ -22,17 +22,21 @@
 <body>
 <div class="wrap" id="app"><div class="card"><p class="muted">불러오는 중…</p></div></div>
 <script type="module">
-import { backend, CONFIG } from "./backend.js";
+import { backend, CONFIG, localDate, addDays, weekStart, sessionXP, wordHopXP, wordHopStars, LEVEL_XP } from "./backend.js";
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const S = { user:null, err:"", math:null };
+const S = { user:null, err:"", math:null, wh:null };
 const demoQ = backend.demo ? "?demo" : "";
 
-function streak(sessions){
-  const set = new Set(sessions.map(s=>s.date)); if(!set.size) return 0;
-  const fmt = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-  const d=new Date(); if(!set.has(fmt(d))) d.setDate(d.getDate()-1);
-  let n=0; while(set.has(fmt(d))){ n++; d.setDate(d.getDate()-1); } return n;
+function studyDays(){
+  const set=new Set((S.math||[]).map(s=>s.date));
+  ((S.wh&&S.wh.log)||[]).forEach(e=>{ if(e&&e.t) set.add(localDate(e.t)); });
+  return set;
+}
+function streak(){
+  const set=studyDays(); if(!set.size) return 0;
+  let d=localDate(); if(!set.has(d)) d=addDays(d,-1);
+  let n=0; while(set.has(d)){ n++; d=addDays(d,-1); } return n;
 }
 function render(){
   const app=$("#app");
@@ -46,20 +50,28 @@ function render(){
   }
   const hour = new Date().getHours();
   const hi = hour<12 ? "좋은 아침" : hour<18 ? "반가워" : "오늘도 수고했어";
-  const m = S.math;
-  const today = new Date(); const todayStr = today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");
-  const doneToday = m ? m.filter(s=>s.date===todayStr).length : 0;
-  app.innerHTML = `<div class="row between" style="padding:4px 2px"><div><div class="label">${today.toLocaleDateString("ko-KR",{month:"long",day:"numeric",weekday:"short"})}</div><h2 style="font-size:26px">${hi}, ${esc(CONFIG.kidName)}!</h2></div><button class="mini" id="logout">로그아웃</button></div>
+  const m = S.math || [];
+  const mx = m.reduce((a,x)=>a+sessionXP(x),0), ex = wordHopXP(S.wh), xp = mx+ex, lv = Math.floor(xp/LEVEL_XP)+1, cur = xp%LEVEL_XP;
+  const td = localDate(), ws = weekStart(td), wd=["월","화","수","목","금","토","일"];
+  const days = [...Array(7)].map((_,i)=>addDays(ws,i));
+  const mDays = new Set(m.map(x=>x.date)), eDays = new Set(((S.wh&&S.wh.log)||[]).filter(e=>e&&e.t).map(e=>localDate(e.t)));
+  app.innerHTML = `<div class="top"><div class="brand"><div class="logo" style="background:#24876a">★</div><div><div class="eyebrow">${new Date().toLocaleDateString("ko-KR",{month:"long",day:"numeric",weekday:"short"})}</div><div class="brandname">${esc(CONFIG.kidName)}이 공부방</div></div></div>
+    <div class="pills"><span class="pillx fire">🔥 ${streak()}</span><span class="pillx lv">Lv.${lv}</span></div></div>
   ${backend.demo?`<div class="notice">데모 모드예요.</div>`:""}
-  <div class="card"><div class="row"><div class="stat"><b class="num">${m?streak(m):"–"}일</b><span>수학 연속 학습</span></div><div class="stat"><b class="num">${m?doneToday:"–"}</b><span>오늘 채점한 학습지</span></div><div class="stat"><b class="num">${m?m.length:"–"}</b><span>전체 학습지</span></div></div></div>
+  <div class="dadmsg"><div class="av" style="background:#1d6fc2">P</div><div style="flex:1"><div class="eyebrow">Paul 쌤</div>${hi}, ${esc(CONFIG.kidName)}! 수학이랑 영어 XP가 합쳐져서 같이 레벨이 올라가.</div></div>
+  <div class="panel"><div class="row between"><h3>공부방 레벨 ${lv}</h3><span class="pillx">⭐ ${xp} XP</span></div>
+    <div class="lvl big"><i style="width:${cur/LEVEL_XP*100}%"></i></div>
+    <div class="row" style="gap:8px"><div class="stat"><b class="num">${mx}</b><span>📐 수학 XP</span></div><div class="stat"><b class="num">${ex}</b><span>🔤 영어 XP (⭐${wordHopStars(S.wh)})</span></div></div>
+    <div class="muted">다음 레벨까지 ${LEVEL_XP-cur} XP · Word Hop 별 1개 = 20 XP</div></div>
+  <div class="panel"><h3>이번 주</h3><div class="wdays" style="margin:0">${days.map((d,i)=>{ const a=mDays.has(d), e=eDays.has(d); return `<div class="wday ${a||e?"on":""} ${d===td?"today":""}"><span>${wd[i]}</span><b>${a?"📐":""}${e?"🔤":""}${!a&&!e?"·":""}</b></div>`; }).join("")}</div></div>
   <a class="tile" href="math.html${demoQ}"><div class="ic" style="background:#4F46E5">Σ</div><div><div class="t">수학 탐험</div><div class="muted">학습지 채점 · 풀이 과정 · 실수 분석</div></div><span class="arrow">›</span></a>
-  <a class="tile" href="${esc(CONFIG.wordHopUrl)}"><div class="ic" style="background:#0E7490">Aa</div><div><div class="t">Word Hop</div><div class="muted">영어 단어 학습</div></div><span class="arrow">›</span></a>
+  <a class="tile" href="${esc(CONFIG.wordHopUrl)}"><div class="ic" style="background:#0E7490">Aa</div><div><div class="t">Word Hop</div><div class="muted">영어 단어 학습 · ⭐ ${wordHopStars(S.wh)}</div></div><span class="arrow">›</span></a>
   ${S.err?`<div class="notice">${esc(S.err)}</div>`:""}
-  <p class="muted" style="text-align:center;margin-top:20px">${esc(S.user.email||"")}</p>`;
+  <div class="row between" style="margin-top:20px"><span class="muted">${esc(S.user.email||"")}</span><button class="mini" id="logout">로그아웃</button></div>`;
   $("#logout").onclick = async () => { await backend.logout(); S.user=null; S.math=null; render(); };
 }
 async function loadMath(){
-  try { S.math = await backend.listSessions(); }
+  try { [S.math, S.wh] = await Promise.all([backend.listSessions(), backend.getWordHop().catch(()=>null)]); }
   catch(e){ S.math=null; S.err = (e && e.code==="permission-denied") ? "이 계정은 공부방 기록에 접근할 수 없어요." : ""; }
 }
 (async () => {

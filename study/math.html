@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,53 +19,42 @@
   <button data-tab="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>기록</button>
   <button data-tab="snap" class="cam"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>채점</button>
   <button data-tab="weak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>분석</button>
-  <button data-tab="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>나</button>
+  <button data-tab="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>도감</button>
 </nav>
 <input type="file" id="file" accept="image/*" multiple hidden>
 <script type="module">
-import { backend, CONFIG } from "./backend.js";
+import { backend, CONFIG, localDate, addDays, weekStart, sessionXP, wordHopXP, wordHopStars, LEVEL_XP } from "./backend.js";
 const KID = CONFIG.kidName, GRADE = CONFIG.grade;
 const TAGS = ["받아올림 실수","받아내림 실수","구구단 실수","0 처리","자리 맞추기","몫 자리","나머지 실수","옮겨쓰기 실수","문제 잘못 읽음","식 미완성","연산 선택","단위 변환","빈칸/미완성","기타"];
-const MENTORS = [
-  { id:"gauss", name:"가우스", era:"1777–1855 · 독일", sym:"Σ", color:"#4F46E5", bg:"#EEF0FF", voice:"glassy",
-    fact:"초등학생 때 1부터 100까지 더하라는 문제를 순식간에 풀었다고 알려진 ‘수학의 왕자’.",
-    hello:"계산이 빨라지는 비결은 규칙을 찾는 거야. 오늘 학습지도 같이 보자.",
-    style:"독일의 수학자 가우스. 침착하고 날카롭다. 규칙과 지름길을 찾는 걸 좋아하고, 실수를 '규칙을 놓친 순간'으로 설명한다." },
-  { id:"archimedes", name:"아르키메데스", era:"기원전 287–212 · 그리스", sym:"π", color:"#0E7490", bg:"#E6F6F9", voice:"rounded",
-    fact:"목욕하다 부력의 원리를 깨닫고 ‘유레카!’를 외쳤다는 이야기로 유명한 발명가이자 수학자.",
-    hello:"발견은 직접 해봐야 머리에 남아. 틀린 문제는 새로운 걸 발견할 기회야.",
-    style:"고대 그리스의 아르키메데스. 호기심 많고 열정적이다. 직접 손으로 해보는 실험과 발견을 강조하고, 깨달으면 '유레카!'를 외친다." },
-  { id:"choi", name:"최석정", era:"1646–1715 · 조선", sym:"方", color:"#9A3412", bg:"#FCF0E8", voice:"buttery",
-    fact:"조선의 영의정이자 수학자. 『구수략』에서 마방진을 연구했고, 오일러보다 훨씬 앞서 직교 라틴 방진을 다뤘다.",
-    hello:"수는 한 칸 한 칸 자리를 지킬 때 아름다워진다네. 차근차근 보세.",
-    style:"조선의 학자 최석정. 차분하고 품위 있는 선비 말투(~하네, ~보세)를 살짝 섞되 4학년이 이해하기 쉽게. 자릿값과 꼼꼼함을 강조한다." },
-  { id:"hong", name:"홍정하", era:"1684–? · 조선", sym:"算", color:"#B91C1C", bg:"#FDECEC", voice:"rounded",
-    fact:"조선의 산학자. 『구일집』을 남겼고, 청나라 사신과의 수학 문답에서 실력을 보여줬다.",
-    hello:"수학은 승부야. 어려운 문제일수록 도전할 맛이 나지! 오늘도 한판 붙어보자.",
-    style:"조선의 산학자 홍정하. 자신감 넘치는 승부사. 도전과 승리를 강조하고, 틀린 문제는 '다음 판에 이길 전략'으로 설명한다." },
-  { id:"ada", name:"에이다 러브레이스", era:"1815–1852 · 영국", sym:"{ }", color:"#7C3AED", bg:"#F3EEFF", voice:"airy",
-    fact:"세계 최초의 컴퓨터 프로그램을 쓴 사람으로 꼽히는 수학자. 계산을 ‘단계별 명령’으로 생각했다.",
-    hello:"모든 계산은 순서가 있는 단계야. 어느 단계에서 길을 잃었는지 같이 찾아보자.",
-    style:"영국의 수학자 에이다 러브레이스. 논리적이고 다정하다. 풀이를 컴퓨터 알고리즘처럼 '1단계, 2단계'로 나누고 버그(실수)를 찾는 디버깅에 비유한다." },
-  { id:"ramanujan", name:"라마누잔", era:"1887–1920 · 인도", sym:"∞", color:"#047857", bg:"#E7F6EF", voice:"buttery",
-    fact:"거의 혼자 공부해서 놀라운 공식들을 찾아낸 천재. 1729라는 숫자의 특별함을 바로 알아본 일화로 유명하다.",
-    hello:"모든 숫자에는 저마다 개성이 있어. 숫자랑 친해지면 실수도 줄어들 거야.",
-    style:"인도의 수학자 라마누잔. 따뜻하고 숫자를 친구처럼 대한다. 숫자의 재미있는 성질을 짚어주며 설명한다." }
+const TEACHER = { name:"Paul 쌤", sym:"P", color:"#1d6fc2", bg:"#dcebfa" };
+// 레벨이 오를 때마다 한 장씩 열리는 '수학 천재 카드' (Word Hop의 동물원처럼)
+const GENIUSES = [
+  { sym:"△", name:"피타고라스", era:"기원전 570?–495 · 그리스", color:"#24876a", fact:"직각삼각형의 세 변 사이의 규칙(피타고라스 정리)으로 유명해요. 세상 모든 것에 수의 비밀이 숨어 있다고 믿었어요." },
+  { sym:"◯", name:"유클리드", era:"기원전 300년경 · 그리스", color:"#1d6fc2", fact:"『원론』이라는 책을 썼는데, 2000년 넘게 전 세계에서 기하학 교과서로 쓰였어요." },
+  { sym:"π", name:"아르키메데스", era:"기원전 287–212 · 그리스", color:"#0e7490", fact:"목욕하다가 부력의 원리를 깨닫고 ‘유레카!’를 외쳤다는 이야기로 유명해요. 원주율 π도 계산했어요." },
+  { sym:"x", name:"알콰리즈미", era:"780?–850? · 페르시아", color:"#b45309", fact:"‘알고리즘’이라는 말이 이 사람 이름에서 나왔어요. 대수학(algebra)이라는 이름도 그의 책 제목에서 왔어요." },
+  { sym:"1·1·2", name:"피보나치", era:"1170?–1250? · 이탈리아", color:"#d9483d", fact:"1, 1, 2, 3, 5, 8… 앞의 두 수를 더해 가는 ‘피보나치 수열’로 유명해요. 유럽에 지금 우리가 쓰는 숫자를 널리 알렸어요." },
+  { sym:"方", name:"최석정", era:"1646–1715 · 조선", color:"#9a3412", fact:"조선의 영의정이자 수학자예요. 『구수략』에서 가로·세로 합이 같은 마방진을 연구했어요." },
+  { sym:"算", name:"홍정하", era:"1684–? · 조선", color:"#b91c1c", fact:"조선의 산학자예요. 『구일집』을 남겼고, 청나라 사신과의 수학 문답에서 실력을 보여줬어요." },
+  { sym:"e", name:"오일러", era:"1707–1783 · 스위스", color:"#4f46e5", fact:"역사상 가장 많은 수학 논문을 쓴 사람 중 하나예요. 눈이 거의 안 보이게 된 뒤에도 머릿속으로 계산하며 연구를 계속했어요." },
+  { sym:"Σ", name:"가우스", era:"1777–1855 · 독일", color:"#1d4ed8", fact:"초등학생 때 1부터 100까지 더하는 문제를 순식간에 풀었다고 알려진 ‘수학의 왕자’예요." },
+  { sym:"{ }", name:"에이다 러브레이스", era:"1815–1852 · 영국", color:"#7c3aed", fact:"세계 최초의 컴퓨터 프로그램을 쓴 사람으로 꼽혀요. 계산을 ‘단계별 명령’으로 생각했어요." },
+  { sym:"∞", name:"라마누잔", era:"1887–1920 · 인도", color:"#047857", fact:"거의 혼자 공부해서 놀라운 공식들을 찾아냈어요. 1729라는 숫자의 특별함을 바로 알아본 일화가 유명해요." },
+  { sym:"∀", name:"에미 뇌터", era:"1882–1935 · 독일", color:"#be185d", fact:"현대 대수학을 만든 수학자예요. 아인슈타인도 그녀의 연구를 크게 칭찬했어요." }
 ];
-const S = { user:null, signedIn:false, loginErr:"", tts:("speechSynthesis" in window), canImg:true, ready:false, sessions:[], files:[], tab:"home", view:null, grading:false, openTag:null, delConfirm:null, err:"", mentorId:null, picking:false };
+const S = { user:null, signedIn:false, loginErr:"", canImg:true, ready:false, sessions:[], files:[], tab:"home", view:null, grading:false, openTag:null, delConfirm:null, err:"", settings:{}, newCard:null };
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const today = () => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+const today = () => localDate();
 const nums = s => (String(s ?? "").match(/\d+/g) || []).map(Number);
 const sameNums = (a,b) => { const x=nums(a), y=nums(b); return x.length>0 && x.length===y.length && x.every((v,i)=>v===y[i]); };
 const placeName = k => ["일","십","백","천","만"][k] || "";
-const M = () => MENTORS.find(m=>m.id===S.mentorId) || MENTORS[0];
+const M = () => TEACHER;
 const avatar = (m, sm) => `<div class="av${sm?" sm":""}" style="background:${m.color}">${m.sym}</div>`;
-function applyTheme(){ const m=M(); document.documentElement.style.setProperty("--acc", m.color); document.documentElement.style.setProperty("--accbg", m.bg); }
+function applyTheme(){}
 
 /* ---------- startup ---------- */
 async function boot(){
-  try { S.mentorId = localStorage.getItem("mentor"); } catch(_){}
   try { S.user = await backend.currentUser(); } catch(e){ S.loginErr = "로그인 정보를 확인하지 못했어요."; }
   S.signedIn = !!S.user;
   if (S.signedIn) await loadAll();
@@ -75,13 +64,13 @@ async function loadAll(){
   let done=false;
   const timer = setTimeout(()=>{ if(!done){ S.err="기록을 아직 불러오지 못했어요. 인터넷 연결을 확인해 주세요."; render(); } }, 10000);
   try {
-    const [list, settings] = await Promise.all([backend.listSessions(), backend.getSettings().catch(()=>({}))]);
+    const [list, settings, wh] = await Promise.all([backend.listSessions(), backend.getSettings().catch(()=>({})), backend.getWordHop().catch(()=>null)]);
+    S.wh = wh;
     S.sessions = list.filter(v=>Array.isArray(v.problems));
-    if (settings.mentor && MENTORS.some(m=>m.id===settings.mentor)) S.mentorId = settings.mentor;
+    S.settings = settings || {};
     S.err="";
   } catch(e){ S.err = (e && e.code==="permission-denied") ? "이 계정은 공부방 기록에 접근할 수 없어요. 허용된 계정으로 로그인해 주세요." : "기록을 불러오지 못했어요."; }
   done=true; clearTimeout(timer);
-  if(!S.mentorId) S.picking = true;
 }
 async function saveSession(s){
   try { await backend.saveSession(s); }
@@ -89,23 +78,34 @@ async function saveSession(s){
 }
 let saving = Promise.resolve();
 function queueSave(s){ saving = saving.then(()=>saveSession(s)); }
-async function setMentor(id){
-  S.mentorId=id; S.picking=false; applyTheme();
-  try { localStorage.setItem("mentor", id); } catch(_){}
-  render(); window.scrollTo(0,0);
-  saving = saving.then(()=>backend.setSettings({mentor:id}).catch(()=>{}));
+async function saveSettings(obj){
+  Object.assign(S.settings, obj);
+  saving = saving.then(()=>backend.setSettings(obj).then(()=>toast("저장했어요")).catch(()=>{ S.err="설정 저장에 실패했어요."; render(); }));
+}
+function celebrate(levelBefore){
+  const after = level().lv;
+  if(after > levelBefore){
+    const card = GENIUSES[Math.min(after, GENIUSES.length)-1];
+    if(after <= GENIUSES.length){ S.newCard = card; }
+    confetti(40); toast(`레벨 업! Lv.${after}`);
+  }
 }
 
 /* ---------- stats (XP) ---------- */
-function xpOf(s){ const pd = s.problems.reduce((a,p)=>a+(p.practiceDone||0),0), bf = s.problems.filter(p=>p.bugFound).length; return s.correct*10 + (s.total>0 && s.correct===s.total ? 30 : 0) + pd*15 + bf*5; }
-function totalXP(){ return S.sessions.reduce((a,s)=>a+xpOf(s),0); }
-const LV = 300;
+function xpOf(s){ return sessionXP(s); }
+function mathXP(){ return S.sessions.reduce((a,s)=>a+xpOf(s),0); }
+function totalXP(){ return mathXP() + wordHopXP(S.wh); }        // 수학 + 영어(Word Hop) 합산
+const LV = LEVEL_XP;
 function level(){ const x=totalXP(); return { lv:Math.floor(x/LV)+1, cur:x%LV, xp:x }; }
+function studyDays(){                                            // 수학이나 영어를 한 날
+  const set = new Set(S.sessions.map(s=>s.date));
+  if(S.wh) (S.wh.log||[]).forEach(e=>{ if(e && e.t) set.add(localDate(e.t)); });
+  return set;
+}
 function streak(){
-  const set = new Set(S.sessions.map(s=>s.date)); if(!set.size) return 0;
-  const fmt = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-  const d=new Date(); if(!set.has(fmt(d))) d.setDate(d.getDate()-1);
-  let n=0; while(set.has(fmt(d))){ n++; d.setDate(d.getDate()-1); } return n;
+  const set = studyDays(); if(!set.size) return 0;
+  let d = today(); if(!set.has(d)) d = addDays(d,-1);
+  let n=0; while(set.has(d)){ n++; d=addDays(d,-1); } return n;
 }
 function recount(s){ s.total = s.problems.length; s.correct = s.problems.filter(p=>p.status==="correct").length; }
 function tagStats(){
@@ -182,17 +182,17 @@ function fixProblem(p){
 async function grade(){
   if(!S.files.length || S.grading) return;
   S.grading = true; S.err=""; S.progress = {i:0,n:S.files.length}; render();
-  const batch=[];
+  const batch=[], lv0=level().lv;
   for(let i=0;i<S.files.length;i++){
     S.progress.i=i; render();
     try{
       const bmp = await loadBitmap(S.files[i]);
       const send = await canvasBlob(toCanvas(bmp,1600),0.85);
-      const res = await backend.grade(send, S.mentorId || "gauss");
+      const res = await backend.grade(send, "paul");
       if(!res || !Array.isArray(res.problems) || !res.problems.length) throw {code:"empty"};
       const problems = res.problems.map(fixProblem);
       for(const p of problems){ if(p.status!=="correct") p.crop = cropBox(bmp, p.box); }
-      const s = { id:"s"+Date.now()+Math.random().toString(36).slice(2,6), ts:Date.now(), date:today(), mentor:S.mentorId,
+      const s = { id:"s"+Date.now()+Math.random().toString(36).slice(2,6), ts:Date.now(), date:today(),
         sheet:String(res.sheet||"수학 학습지").slice(0,60), praise:String(res.overall_praise||""), tip:String(res.habit_tip||""),
         thumb: toCanvas(bmp,900).toDataURL("image/jpeg",0.6), problems };
       recount(s); S.sessions.unshift(s); batch.push(s); queueSave(s);
@@ -209,7 +209,12 @@ async function grade(){
     }
   }
   S.grading=false; S.files=[];
-  if(batch.length){ S.view = {type:"result", ids:batch.map(b=>b.id)}; toast(`+${batch.reduce((a,s)=>a+xpOf(s),0)} XP`); }
+  if(batch.length){
+    S.view = {type:"result", ids:batch.map(b=>b.id)};
+    toast(`+${batch.reduce((a,s)=>a+xpOf(s),0)} XP`);
+    if(batch.some(b=>b.total>0 && b.correct===b.total)) confetti(60); else confetti(18);
+    celebrate(lv0);
+  }
   render(); window.scrollTo(0,0);
 }
 
@@ -429,7 +434,6 @@ function stepperInner(key){
   return `<div class="row between"><span class="label" style="color:var(--acc)">바른 풀이</span><span class="dots">${st.frames.map((_,k)=>`<i class="${k===st.i?"on":""}"></i>`).join("")}</span></div>
   <div style="margin-top:6px">${fr.html}</div><div class="cap">${fr.text}</div>
   <div class="row between"><button class="mini" data-act="stprev" data-k="${key}" ${st.i===0?"disabled":""}>이전</button>
-  ${S.tts?`<button class="mini" data-act="stsay" data-k="${key}">읽어주기</button>`:""}
   <button class="mini pri" data-act="stnext" data-k="${key}">${st.i===st.frames.length-1?"처음부터":"다음"}</button></div>`;
 }
 
@@ -453,13 +457,12 @@ const ACTIONS = {
 
 /* ---------- render ---------- */
 function render(){
-  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.tab===S.tab && !S.view && !S.picking));
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.tab===S.tab && !S.view));
   const app=$("#app");
   if(!S.ready){ app.innerHTML=`<div class="card"><p class="muted">불러오는 중…</p></div>`; return; }
   let h="";
   if(!S.signedIn){ app.innerHTML = loginView(); document.getElementById("tabs").style.display="none"; return; }
   document.getElementById("tabs").style.display="";
-  if(S.picking){ app.innerHTML = pickerView(); return; }
   if(backend.demo) h+=`<div class="notice">데모 모드예요. 채점 결과는 예시이고 기록은 저장되지 않아요.</div>`;
   if(S.err) h+=`<div class="notice">${esc(S.err)}</div>`;
   if(S.view && S.view.type==="result") h+=resultView();
@@ -475,28 +478,49 @@ function loginView(){
   <button class="pri big-btn" data-act="login">Google 계정으로 로그인</button>${S.loginErr?`<div class="err">${esc(S.loginErr)}</div>`:""}
   <p class="muted" style="margin-top:16px">허용된 가족 계정만 사용할 수 있어요.</p><p><a href="./" style="color:var(--sub);font-size:14px">← 공부방으로</a></p></div>`;
 }
-function pickerView(){
-  let h=`<div style="padding:8px 2px 4px"><div class="label">STEP 1</div><h2 style="font-size:24px;margin-top:4px">${KID}의 수학 멘토를 골라봐</h2><p class="muted" style="margin:6px 0 0">역사 속 수학 천재가 채점하고 풀이를 설명해 줄 거야. 언제든 바꿀 수 있어.</p></div>`;
-  MENTORS.forEach(m=>{ h+=`<button class="mentor ${S.mentorId===m.id?"on":""}" data-act="mentor" data-id="${m.id}">${avatar(m)}<div><div class="nm">${m.name}</div><div class="era">${m.era}</div><div class="fact">${m.fact}</div></div></button>`; });
-  if(S.mentorId) h+=`<button class="back" style="margin-top:6px" data-act="unpick">취소</button>`;
-  return h;
+function topBar(){
+  const L=level(), st=streak();
+  return `<div class="top"><div class="brand"><div class="logo">÷</div><div><div class="eyebrow">${new Date().toLocaleDateString("ko-KR",{month:"long",day:"numeric",weekday:"short"})}</div><div class="brandname">수학 탐험</div></div></div>
+  <div class="pills"><span class="pillx fire">🔥 ${st}</span><span class="pillx" title="수학 + 영어 합산 XP">⭐ ${L.xp}</span><span class="pillx lv">Lv.${L.lv}</span></div></div>`;
+}
+function todayStats(){
+  const d=today();
+  const sheets=S.sessions.filter(s=>s.date===d).length;
+  let missions=0; for(const s of S.sessions) for(const p of s.problems) missions += (p.practiceLog||[]).filter(x=>x===d).length;
+  return { sheets, missions };
+}
+function rocketTrack(){
+  const t=todayStats(), goalS=2, goalM=3, done=Math.min(t.sheets,goalS)+Math.min(t.missions,goalM), total=goalS+goalM, pct=done/total;
+  const complete = done>=total;
+  return `<div class="panel"><div class="row between"><h3>오늘의 우주여행</h3><span class="pillx ${complete?"okp":""}">${complete?"달 도착! 🎉":`${done} / ${total}`}</span></div>
+  <div class="track"><div class="stars-bg">✦ · ✧ · ✦ · ✧ · ✦</div><div class="rocket" style="left:calc(${(pct*100).toFixed(0)}% * 0.82)">🚀</div><div class="moon">🌕</div></div>
+  <div class="goals"><span class="${t.sheets>=goalS?"gd":""}">📄 학습지 ${Math.min(t.sheets,goalS)}/${goalS}</span><span class="${t.missions>=goalM?"gd":""}">🎯 미션 ${Math.min(t.missions,goalM)}/${goalM}</span></div></div>`;
 }
 function homeView(){
-  const m=M(), st=streak(), L=level(), pend=pendingPractice(), ts=tagStats().filter(t=>t.recent>=3);
-  let h=`<div class="row between" style="padding:4px 2px"><div><div class="label">${new Date().toLocaleDateString("ko-KR",{month:"long",day:"numeric",weekday:"short"})}</div><h2 style="font-size:24px">${KID}의 수학 탐험</h2></div><a class="mini" href="./" style="text-decoration:none;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-weight:600;font-size:13px;background:#fff">공부방</a></div>
-  <div class="card"><div class="row" style="align-items:flex-start">${avatar(m)}<div style="flex:1"><div style="font-weight:700">${m.name} <span class="muted" style="font-weight:500">· 멘토</span></div><div class="say" style="margin-top:6px">${esc(m.hello)}</div></div></div>
-  <div class="row" style="margin-top:14px"><div class="stat"><b class="num">Lv.${L.lv}</b><span>${L.xp} XP</span><div class="lvl"><i style="width:${L.cur/LV*100}%"></i></div></div><div class="stat"><b class="num">${st}일</b><span>연속 학습</span></div><div class="stat"><b class="num">${S.sessions.length}</b><span>채점한 학습지</span></div></div>
-  <button class="pri big-btn" style="margin-top:14px" data-act="tab" data-t="snap">학습지 채점하기</button></div>`;
-  if(ts.length) h+=`<div class="card"><div class="row between"><h3>집중 연습</h3><span class="pill warn">반복 실수</span></div><p style="margin:8px 0 0">최근 2주 동안 <b>${ts.map(t=>esc(t.tag)).join(", ")}</b> 실수가 3번 이상 나왔어. 아래 미션으로 끝내버리자.</p><div class="note tip" style="margin-bottom:0"><b>이번 주 습관</b> · ${esc((ACTIONS[ts[0].tag]||ACTIONS["기타"]).habit)}</div></div>`;
-  if(pend.length){ h+=`<div class="card"><div class="row between"><h3>오늘의 미션</h3><span class="pill acc">+15 XP</span></div><p class="muted" style="margin:4px 0 6px">지난번 틀린 문제와 같은 유형이야.</p>`; pend.forEach(x=>h+=practiceRow(x.s,x.p,x.i,x.q)); h+=`</div>`; }
+  const st=streak(), L=level(), pend=pendingPractice(), ts=tagStats().filter(t=>t.recent>=3);
+  const hour=new Date().getHours();
+  const def = hour<12 ? `좋은 아침, ${KID}! 오늘도 같이 수학 탐험 떠나볼까?` : hour<18 ? `${KID}, 학습지 다 풀었으면 사진 찍어서 보여줘. 바로 채점해 줄게!` : `오늘도 수고했어, ${KID}! 마지막 미션까지 끝내면 로켓이 달에 도착해.`;
+  let h=topBar();
+  if(S.newCard){ const c=S.newCard; h+=`<div class="newcard"><div class="gsym" style="background:${c.color}">${c.sym}</div><div style="flex:1"><div class="eyebrow">새 천재 카드 획득!</div><div class="bigname">${c.name}</div><div class="muted">${c.era}</div></div><button class="mini" data-act="tab" data-t="me">도감 보기</button></div>`; }
+  h+=`<div class="dadmsg"><div class="av" style="background:${TEACHER.color}">P</div><div style="flex:1"><div class="eyebrow">Paul 쌤</div><div style="font-size:16px;margin-top:2px">${esc(S.settings.dadMsg || def)}</div></div></div>`;
+  h+=rocketTrack();
+  h+=`<button class="btnx big" data-act="tab" data-t="snap">📸 학습지 채점하기</button>`;
+  if(S.settings.rewardText && +S.settings.rewardXp>0){
+    const goal=+S.settings.rewardXp, have=Math.min(L.xp - (+S.settings.rewardFrom||0), goal), pct=Math.max(0,have)/goal*100;
+    h+=`<div class="panel reward"><div class="row between"><h3>🎁 ${esc(S.settings.rewardText)}</h3><span class="pillx">${Math.max(0,have)} / ${goal} XP</span></div><div class="lvl big"><i style="width:${pct}%"></i></div>${pct>=100?`<div class="okp pillx" style="align-self:flex-start">목표 달성! Paul 쌤한테 보여줘 🙌</div>`:""}</div>`;
+  }
+  if(ts.length) h+=`<div class="panel"><div class="row between"><h3>집중 연습</h3><span class="pill warn">반복 실수</span></div><p style="margin:0">최근 2주 동안 <b>${ts.map(t=>esc(t.tag)).join(", ")}</b> 실수가 3번 이상 나왔어. 미션으로 끝내버리자!</p><div class="note tip" style="margin:0"><b>이번 주 습관</b> · ${esc((ACTIONS[ts[0].tag]||ACTIONS["기타"]).habit)}</div></div>`;
+  if(pend.length){ h+=`<div class="panel"><div class="row between"><h3>🎯 오늘의 미션</h3><span class="pillx">문제당 +15 XP</span></div><p class="muted" style="margin:0">지난번 틀린 문제와 같은 유형이야.</p>`; pend.forEach(x=>h+=practiceRow(x.s,x.p,x.i,x.q)); h+=`</div>`; }
+  const have = GENIUSES.slice(0, Math.min(L.lv, GENIUSES.length));
+  h+=`<div class="panel"><div class="row between"><h3>천재 카드 ${have.length} / ${GENIUSES.length}</h3><button class="mini" data-act="tab" data-t="me">도감</button></div><div class="gstrip">${GENIUSES.map((g,i)=>i<have.length?`<span style="background:${g.color}">${g.sym}</span>`:`<span class="lk">🔒</span>`).join("")}</div><div class="muted">다음 카드까지 ${LV-L.cur} XP</div></div>`;
   const recent=S.sessions.slice(0,3);
-  if(recent.length){ h+=`<div class="card"><h3>최근 채점</h3>`; recent.forEach(s=>h+=histRow(s)); h+=`</div>`; }
+  if(recent.length){ h+=`<div class="panel"><h3>최근 채점</h3>`; recent.forEach(s=>h+=histRow(s)); h+=`</div>`; }
+  h+=`<p style="text-align:center;margin:18px 0 0"><a href="./" class="muted">← 공부방으로</a></p>`;
   return h;
 }
 function snapView(){
-  const m=M();
-  let h=`<div class="card"><h2>학습지 채점</h2><p class="muted" style="margin:4px 0 14px">여러 장을 한 번에 올릴 수 있어요. 학습지 전체가 밝고 반듯하게 보이게 찍어주세요.</p>`;
-  if(S.grading) return h+`<div class="row">${avatar(m,true)}<div><b>${m.name}</b>가 채점하는 중 <span class="muted num">(${S.progress.i+1}/${S.progress.n})</span></div></div><div class="prog"><i></i></div><p class="muted">한 장에 30초~1분 정도 걸려요.</p></div>`;
+  let h=`<div class="card"><h2>📸 학습지 채점</h2><p class="muted" style="margin:4px 0 14px">여러 장을 한 번에 올릴 수 있어요. 학습지 전체가 밝고 반듯하게 보이게 찍어주세요.</p>`;
+  if(S.grading){ const tips=["올린 숫자는 동그라미 쳤나 생각해 보기","0이 있는 자리를 빠뜨리지 않았나?","답이 대충 맞는 크기인지 어림해 보기","문장제는 식 → 계산 → 답+단위"]; return h+`<div class="row"><div class="av sm" style="background:${TEACHER.color}">P</div><div><b>Paul 쌤</b>이 채점하는 중 <span class="muted num">(${S.progress.i+1}/${S.progress.n})</span></div></div><div class="prog"><i></i></div><p class="muted">기다리는 동안 · ${tips[S.progress.i%tips.length]}</p></div>`; }
   h+=`<div class="drop" data-act="file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><div style="font-weight:700;margin-top:6px">사진 찍기 / 고르기</div><div class="muted">최대 6장</div></div>`;
   if(S.files.length){
     h+=`<div class="thumbs" id="thumbs"></div><div class="row" style="margin-top:12px"><button data-act="clear">다시 고르기</button><button class="pri" style="flex:1" data-act="grade">채점 시작 (${S.files.length}장)</button></div>`;
@@ -511,12 +535,12 @@ function resultView(){
   return h;
 }
 function sessionBlock(s){
-  const m = MENTORS.find(x=>x.id===s.mentor) || M();
   const pct = s.total ? Math.round(s.correct/s.total*100) : 0, perfect = s.total>0 && s.correct===s.total;
+  const nStar = perfect?3:pct>=80?2:pct>=50?1:0;
   let h=`<div class="card"><div class="label">${esc(s.date)} · ${esc(s.sheet)}</div>
-  <div class="row between" style="margin-top:8px;align-items:flex-end"><div class="score num">${s.correct}<small> / ${s.total}</small></div><div style="text-align:right"><span class="pill ${perfect?"ok":"acc"}">${perfect?"PERFECT":pct+"%"}</span><div class="muted num" style="margin-top:4px">+${xpOf(s)} XP</div></div></div>
-  <div class="bar" style="margin:12px 0 14px"><i style="width:${pct}%;background:${perfect?"var(--ok)":"var(--acc)"}"></i></div>
-  <div class="row" style="align-items:flex-start">${avatar(m,true)}<div class="say" style="flex:1">${esc(s.praise||"끝까지 다 풀었네. 좋아!")}</div></div>
+  <div class="result-hero"><div class="bigstars">${"⭐".repeat(nStar)}${"☆".repeat(3-nStar)}</div><div class="score num">${s.correct}<small> / ${s.total}</small></div>
+  <div class="row" style="justify-content:center;gap:8px"><span class="pillx ${perfect?"okp":""}">${perfect?"PERFECT!":pct+"%"}</span><span class="pillx">+${xpOf(s)} XP</span></div></div>
+  <div class="dadmsg" style="margin-top:12px"><div class="av sm" style="background:${TEACHER.color}">P</div><div style="flex:1"><div class="eyebrow">Paul 쌤</div>${esc(s.praise||"끝까지 다 풀었네. 좋아!")}</div></div>
   ${s.tip?`<div class="note tip"><b>습관 팁</b> · ${esc(s.tip)}</div>`:""}</div>`;
   if(s.thumb){
     h+=`<div class="card"><h3 style="margin-bottom:10px">채점한 학습지</h3><div class="photo"><img src="${s.thumb}" alt="채점한 학습지 사진">`;
@@ -541,7 +565,7 @@ function wrongCard(s,p,i){
   else h+=`<div class="ans"><div class="mine"><span>내 답</span><b class="num">${esc(p.student||"빈칸")}</b></div><div class="right"><span>정답</span><b class="num">${esc(p.answer)}</b></div></div>`;
   if(p.crop) h+=`<img class="crop" src="${p.crop}" alt="학습지에서 이 문제 부분">`;
   if(p.where && p.status!=="unclear") h+=`<div class="note where"><b>실수한 곳</b> · ${esc(p.where)}</div>`;
-  if(p.explain) h+=`<div class="note exp"><b>설명</b> · ${esc(p.explain)}${S.tts?` <button class="mini" style="margin-left:4px" data-act="say" data-text="${esc(p.explain)}">읽어주기</button>`:""}</div>`;
+  if(p.explain) h+=`<div class="note exp"><b>설명</b> · ${esc(p.explain)}</div>`;
   if(p.praise) h+=`<div class="muted">잘한 점 · ${esc(p.praise)}</div>`;
   if((p.tags||[]).length) h+=`<div class="chips">${p.tags.map(t=>`<span class="pill">#${esc(t)}</span>`).join("")}</div>`;
   h+=compareBox(key, s, i, p);
@@ -567,14 +591,73 @@ function historyView(){
   S.sessions.forEach(s=>{ if(s.date!==last){ h+=`<div class="label" style="margin-top:12px">${esc(s.date)}</div>`; last=s.date; } h+=histRow(s); });
   return h+`</div>`;
 }
+/* ---------- weekly report ---------- */
+function weekData(start){
+  const end=addDays(start,6), inW=d=>d>=start && d<=end;
+  const ss=S.sessions.filter(s=>inW(s.date));
+  const total=ss.reduce((a,s)=>a+s.total,0), correct=ss.reduce((a,s)=>a+s.correct,0);
+  const tags={};
+  ss.forEach(s=>s.problems.forEach(p=>{ if(p.status!=="wrong"&&p.status!=="incomplete") return; (p.tags&&p.tags.length?p.tags:["기타"]).forEach(t=>tags[t]=(tags[t]||0)+1); }));
+  let missions=0; S.sessions.forEach(s=>s.problems.forEach(p=>missions+=(p.practiceLog||[]).filter(inW).length));
+  const bugs=ss.reduce((a,s)=>a+s.problems.filter(p=>p.bugFound).length,0);
+  const mathDays=new Set(ss.map(s=>s.date));
+  const elog=S.wh ? (S.wh.log||[]).filter(e=>e&&e.t&&inW(localDate(e.t))) : [];
+  const engDays=new Set(elog.map(e=>localDate(e.t)));
+  const eN=elog.reduce((a,e)=>a+(+e.n||0),0), eS=elog.reduce((a,e)=>a+(+e.score||0),0);
+  const best=ss.filter(s=>s.total>=5).sort((a,b)=>b.correct/b.total-a.correct/a.total)[0]||null;
+  const xp=ss.reduce((a,s)=>a+s.correct*10+(s.total>0&&s.correct===s.total?30:0)+s.problems.filter(p=>p.bugFound).length*5,0)+missions*15;
+  return { start,end,ss,total,correct,acc: total?Math.round(correct/total*100):null, tags, missions, bugs, mathDays, engDays, elog, eAcc: eN?Math.round(eS/eN*100):null, best, xp };
+}
+function reportView(){
+  const off=S.weekOff||0, start=addDays(weekStart(today()), -7*off), W=weekData(start), P=weekData(addDays(start,-7));
+  const fmt=d=>{ const [y,m,dd]=d.split("-"); return `${+m}/${+dd}`; };
+  const diff = (W.acc!=null && P.acc!=null) ? W.acc-P.acc : null;
+  const top = Object.entries(W.tags).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const improved = Object.keys(P.tags).filter(t=>!W.tags[t]);
+  const days = [...Array(7)].map((_,i)=>addDays(start,i));
+  const wd=["월","화","수","목","금","토","일"];
+  let sum;
+  if(!W.ss.length && !W.elog.length) sum = `이번 주는 아직 기록이 없어. 학습지 한 장부터 시작해 볼까?`;
+  else {
+    sum = W.ss.length ? `이번 주 수학 학습지 ${W.ss.length}장, 정답률 ${W.acc}%` + (diff!=null ? (diff>=0 ? ` (지난주보다 +${diff}%p 올랐어!)` : ` (지난주보다 ${diff}%p)`) : "") + ". " : "이번 주는 수학 학습지가 없었어. ";
+    if(W.elog.length) sum += `영어는 Word Hop을 ${W.engDays.size}일 했어. `;
+    if(improved.length) sum += `지난주에 있던 ‘${improved.slice(0,2).join("’, ‘")}’ 실수가 이번 주엔 하나도 없어. 대단해! `;
+    if(W.bugs) sum += `실수를 스스로 ${W.bugs}번이나 찾아냈어. `;
+    sum += top.length ? `다음 주 목표는 ‘${top[0][0]}’ 잡기!` : (W.ss.length ? "틀린 문제가 거의 없는 한 주였어!" : "");
+  }
+  S.reportText = `[${KID} 주간 리포트 ${fmt(W.start)}~${fmt(W.end)}]\n`
+    + `· 공부한 날: ${days.filter(d=>W.mathDays.has(d)||W.engDays.has(d)).length}일 (수학 ${W.mathDays.size}일, 영어 ${W.engDays.size}일)\n`
+    + `· 수학: 학습지 ${W.ss.length}장, 문제 ${W.total}개, 정답률 ${W.acc??"-"}%${diff!=null?` (지난주 대비 ${diff>=0?"+":""}${diff}%p)`:""}\n`
+    + `· 미션 ${W.missions}개 해결, 스스로 찾은 실수 ${W.bugs}개\n`
+    + (top.length?`· 자주 한 실수: ${top.map(([t,n])=>`${t} ${n}번`).join(", ")}\n`:"")
+    + (improved.length?`· 좋아진 점: ${improved.join(", ")} 실수 0번\n`:"")
+    + (W.elog.length?`· 영어(Word Hop): ${W.elog.length}회 학습${W.eAcc!=null?`, 정답률 ${W.eAcc}%`:""}\n`:"")
+    + `· Paul 쌤 한마디: ${sum}`;
+  let h=`<div class="card report"><div class="row between"><h3>📅 주간 리포트</h3><div class="row" style="gap:4px"><button class="mini" data-act="wk" data-d="1">◀</button><span class="num" style="font-weight:800;min-width:92px;text-align:center">${fmt(W.start)}~${fmt(W.end)}</span><button class="mini" data-act="wk" data-d="-1" ${off===0?"disabled":""}>▶</button></div></div>
+  <div class="wdays">${days.map((d,i)=>{ const m=W.mathDays.has(d), e=W.engDays.has(d); return `<div class="wday ${m||e?"on":""} ${d===today()?"today":""}"><span>${wd[i]}</span><b>${m?"📐":""}${e?"🔤":""}${!m&&!e?"·":""}</b></div>`; }).join("")}</div>
+  <div class="rgrid">
+    <div class="stat"><b class="num">${W.ss.length}</b><span>📐 학습지</span></div>
+    <div class="stat"><b class="num">${W.acc??"–"}${W.acc!=null?"%":""}</b><span>정답률 ${diff==null?"":`<em class="${diff>=0?"up":"down"}">${diff>=0?"▲":"▼"}${Math.abs(diff)}</em>`}</span></div>
+    <div class="stat"><b class="num">${W.missions}</b><span>🎯 미션</span></div>
+    <div class="stat"><b class="num">${W.bugs}</b><span>🔍 실수 찾기</span></div>
+    <div class="stat"><b class="num">${W.elog.length}</b><span>🔤 영어 학습${W.eAcc!=null?` · ${W.eAcc}%`:""}</span></div>
+    <div class="stat"><b class="num">+${W.xp}</b><span>수학 XP</span></div>
+  </div>`;
+  if(top.length) h+=`<div class="rsec"><div class="eyebrow">자주 한 실수</div>${top.map(([t,n])=>{ const pv=P.tags[t]||0, d=n-pv; return `<div class="row between rline"><span>${esc(t)}</span><span class="num">${n}번 ${pv?`<em class="${d<=0?"up":"down"}">${d>0?"▲":d<0?"▼":"–"}${d?Math.abs(d):""}</em>`:`<em class="down">new</em>`}</span></div>`; }).join("")}</div>`;
+  if(improved.length) h+=`<div class="rsec"><div class="eyebrow">좋아진 점</div><div>${improved.map(t=>`<span class="pill ok" style="margin:2px">${esc(t)} 0번 ✓</span>`).join("")}</div></div>`;
+  if(W.best) h+=`<div class="rsec"><div class="eyebrow">이번 주 베스트</div><div>${esc(W.best.date)} · ${esc(W.best.sheet)} <b class="num">${W.best.correct}/${W.best.total}</b></div></div>`;
+  h+=`<div class="dadmsg" style="margin:12px 0 0"><div class="av sm" style="background:${TEACHER.color}">P</div><div style="flex:1"><div class="eyebrow">Paul 쌤 한마디</div>${esc(sum)}</div></div>
+  <div class="row" style="justify-content:flex-end;margin-top:10px"><button class="mini" data-act="copyrep">📋 카톡용 텍스트 복사</button></div><div id="repcopy"></div></div>`;
+  return h;
+}
 function weakView(){
   const ts=tagStats();
   const wk = d => S.sessions.filter(s=>Date.now()-s.ts >= d*7*864e5 && Date.now()-s.ts < (d+1)*7*864e5);
   const acc = arr => { const t=arr.reduce((a,s)=>a+s.total,0), c=arr.reduce((a,s)=>a+s.correct,0); return t? Math.round(c/t*100) : null; };
   const a0=acc(wk(0)), a1=acc(wk(1));
   const diff = (a0!=null && a1!=null) ? a0-a1 : null;
-  let h=`<div style="padding:4px 2px"><div class="label">부모용</div><h2 style="font-size:24px">학습 분석</h2></div>
-  <div class="card"><div class="row"><div class="stat"><b class="num">${wk(0).length}</b><span>이번 주 학습지</span></div><div class="stat"><b class="num">${a0??"–"}${a0!=null?"%":""}</b><span>이번 주 정답률</span></div><div class="stat"><b class="num" style="color:${diff==null?"inherit":diff>=0?"var(--ok)":"var(--bad)"}">${diff==null?"–":(diff>=0?"+":"")+diff+"%p"}</b><span>지난주 대비</span></div></div></div>`;
+  let h=`<div style="padding:4px 2px"><div class="label">부모용</div><h2 style="font-size:24px">학습 분석</h2></div>${reportView()}
+  `;
   h+=`<div class="card"><h3>실수 유형</h3><p class="muted" style="margin:4px 0 6px">2주 안에 같은 유형이 3번 이상이면 ‘반복’으로 표시해요. 항목을 누르면 실제 문제가 보여요.</p>`;
   if(!ts.length) h+=`<p class="muted">아직 틀린 문제 기록이 없어요.</p>`;
   const max = Math.max(1,...ts.map(t=>t.total));
@@ -598,48 +681,66 @@ function weakView(){
     h+=`<div class="pl" style="margin-top:6px"><span>스스로 찾기</span>틀린 문제 ${shown}개 중 ${found}개는 ${esc(KID)}이가 직접 실수를 찾아냈어요.</div>`;
     h+=`<p class="muted" style="margin:10px 0 0">대화 팁: "요즘 <b>${esc(focus[0].tag)}</b>에서 자꾸 걸리던데, 오늘 미션 3개만 같이 끝내볼까?" 실수를 지적하기보다 스스로 찾아낸 순간을 칭찬해 주세요.</p></div>`;
   }
+  const st0=S.settings;
+  h+=`<div class="card"><h3>Paul 쌤 설정</h3><p class="muted" style="margin:4px 0 10px">홈 화면에 보이는 메시지와 보상 목표를 정해요.</p>
+    <label class="flabel">${esc(KID)}에게 보낼 메시지</label><textarea id="set-msg" rows="2" placeholder="예: 이번 주 받아올림 미션 다 하면 주말에 보드게임 하자!">${esc(st0.dadMsg||"")}</textarea>
+    <label class="flabel">보상 목표</label><div class="row" style="flex-wrap:wrap"><input type="text" id="set-rtext" style="flex:1;min-width:160px" placeholder="예: 게임 30분" value="${esc(st0.rewardText||"")}"><input type="text" id="set-rxp" inputmode="numeric" style="width:100px" placeholder="XP" value="${esc(st0.rewardXp||"")}"><span class="muted">XP 모으면</span></div>
+    <div class="err" id="set-err"></div>
+    <div class="row" style="justify-content:flex-end;margin-top:10px"><button class="pri" data-act="saveset">저장</button></div></div>`;
   return h;
 }
 function meView(){
-  const m=M(), L=level(), ss=S.sessions, ts=tagStats(), st=streak();
+  const L=level(), ss=S.sessions, ts=tagStats(), st=streak();
   const perfect = ss.filter(s=>s.total>0&&s.correct===s.total).length;
   const solved = ss.reduce((a,s)=>a+s.problems.reduce((b,p)=>b+(p.practiceDone||0),0),0);
+  const found = ss.reduce((a,s)=>a+s.problems.filter(p=>p.bugFound).length,0);
   const pr = t => ts.find(x=>x.tag===t)?.practiced||0;
-  const B=[["◎","첫 채점",ss.length>=1],["100","첫 만점",perfect>=1],["×5","만점 5회",perfect>=5],["3d","3일 연속",st>=3],["7d","7일 연속",st>=7],["20","학습지 20장",ss.length>=20],
-    ["↻","재도전 10문제",solved>=10],["↻↻","재도전 30문제",solved>=30],["Lv5","레벨 5",L.lv>=5],["+↑","받아올림 정복",pr("받아올림 실수")>=3],["0","0의 비밀",pr("0 처리")>=3],["…","나머지 정복",pr("나머지 실수")>=3]];
-  let h=`<div class="card"><div class="row">${avatar(m)}<div style="flex:1"><div class="label">나의 멘토</div><div style="font-weight:700;font-size:18px">${m.name}</div><div class="muted">${m.era}</div></div><button class="mini" data-act="pick">변경</button></div><p style="margin:10px 0 0;font-size:14px">${m.fact}</p></div>
-  <div class="card"><div class="row between"><div><div class="label">로그인 계정</div><div style="font-weight:600">${esc(S.user&&(S.user.email||S.user.displayName)||"")}</div></div><button class="mini" data-act="logout">로그아웃</button></div></div>
-  <div class="card"><div class="row between"><h3>레벨</h3><span class="num" style="font-weight:700">Lv.${L.lv}</span></div><div class="lvl" style="height:10px"><i style="width:${L.cur/LV*100}%"></i></div><p class="muted num" style="margin:6px 0 0">다음 레벨까지 ${LV-L.cur} XP · 정답 10 · 만점 보너스 30 · 재도전 15</p></div>
-  <div class="card"><h3 style="margin-bottom:10px">업적</h3><div class="grid3">`;
-  B.forEach(([e,n,ok])=>h+=`<div class="badge ${ok?"":"off"}"><span class="e num" style="color:${ok?m.color:"inherit"}">${e}</span>${n}</div>`);
-  return h+`</div></div>`;
+  const B=[["🐣","첫 채점",ss.length>=1],["💯","첫 만점",perfect>=1],["🏆","만점 5회",perfect>=5],["🔥","3일 연속",st>=3],["🌈","7일 연속",st>=7],["📚","학습지 20장",ss.length>=20],
+    ["🔍","실수 탐정 5회",found>=5],["💪","재도전 10문제",solved>=10],["🚀","재도전 30문제",solved>=30],["➕","받아올림 정복",pr("받아올림 실수")>=3],["0️⃣","0의 비밀",pr("0 처리")>=3],["🍬","나머지 정복",pr("나머지 실수")>=3]];
+  let h=topBar();
+  h+=`<div class="panel"><div class="row between"><h3>Lv.${L.lv}</h3><span class="muted num">다음 카드까지 ${LV-L.cur} XP</span></div><div class="lvl big"><i style="width:${L.cur/LV*100}%"></i></div><div class="row" style="gap:8px"><div class="stat"><b class="num">${mathXP()}</b><span>📐 수학 XP</span></div><div class="stat"><b class="num">${wordHopXP(S.wh)}</b><span>🔤 영어 XP (⭐${wordHopStars(S.wh)} × 20)</span></div></div>
+  <p class="muted" style="margin:0">수학: 정답 10 · 만점 보너스 30 · 실수 찾기 5 · 재도전 15 XP / 영어: Word Hop 별 1개 = 20 XP${S.wh?"":" · Word Hop 기록을 아직 못 찾았어요"}</p></div>`;
+  h+=`<h3 style="margin:18px 2px 8px">수학 천재 도감 <span class="muted">${Math.min(L.lv,GENIUSES.length)} / ${GENIUSES.length}</span></h3><div class="gzoo">`;
+  GENIUSES.forEach((g,i)=>{ const open = i < L.lv;
+    h+= open ? `<div class="gcard"><div class="gsym" style="background:${g.color}">${g.sym}</div><div class="bigname">${g.name}</div><div class="muted" style="font-size:12px">${g.era}</div><div class="gfact">${g.fact}</div></div>`
+             : `<div class="gcard locked"><div class="gsym lk">🔒</div><div class="bigname">???</div><div class="muted" style="font-size:12px">Lv.${i+1}에 열려요</div></div>`; });
+  h+=`</div><h3 style="margin:18px 2px 8px">업적</h3><div class="grid3">`;
+  B.forEach(([e,n,ok])=>h+=`<div class="badge ${ok?"":"off"}"><span class="e">${e}</span>${n}</div>`);
+  h+=`</div><div class="panel" style="margin-top:14px"><div class="row between"><div><div class="eyebrow">로그인 계정</div><div style="font-weight:600">${esc(S.user&&(S.user.email||S.user.displayName)||"")}</div></div><button class="mini" data-act="logout">로그아웃</button></div></div>`;
+  return h;
 }
 
 /* ---------- effects ---------- */
-function toast(msg){ const t=document.createElement("div"); t.className="toast"; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2300); }
-function say(text){
-  if(!S.tts) return;
-  const clean = String(text).replace(/<[^>]+>/g," ").replace(/×/g," 곱하기 ").replace(/÷/g," 나누기 ").replace(/−/g," 빼기 ").replace(/…/g," 나머지 ").replace(/=/g," 는 ").replace(/\s+/g," ").trim();
-  try {
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(clean); u.lang="ko-KR"; u.rate=0.95;
-    const v = speechSynthesis.getVoices().find(v=>/^ko/i.test(v.lang)); if(v) u.voice=v;
-    speechSynthesis.speak(u);
-  } catch(_){}
+function confetti(n=30){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const box=document.createElement("div"); box.className="fx";
+  const bits=["⭐","✨","🎉","🟡","🔵","🟢","🔴"];
+  for(let i=0;i<n;i++){ const sp=document.createElement("span"); sp.textContent=bits[i%bits.length]; sp.style.left=Math.random()*100+"%"; sp.style.animationDelay=(Math.random()*0.4)+"s"; sp.style.fontSize=(16+Math.random()*16)+"px"; box.appendChild(sp); }
+  document.body.appendChild(box); setTimeout(()=>box.remove(),2200);
 }
-
+function toast(msg){ const t=document.createElement("div"); t.className="toast"; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2300); }
 /* ---------- events ---------- */
-document.getElementById("tabs").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; S.tab=b.dataset.tab; S.view=null; S.picking=false; S.delConfirm=null; render(); window.scrollTo(0,0); });
+document.getElementById("tabs").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; S.tab=b.dataset.tab; S.view=null; S.delConfirm=null; if(S.tab==="me") S.newCard=null; render(); window.scrollTo(0,0); });
 $("#file").addEventListener("change", e=>{ S.files=[...e.target.files].slice(0,6); e.target.value=""; render(); });
 document.getElementById("app").addEventListener("click", async e=>{
   const t=e.target.closest("[data-act]"); if(!t) return;
   const a=t.dataset.act, sid=t.dataset.s, find=id=>S.sessions.find(s=>s.id===id);
   if(a==="login"){ S.loginErr=""; try{ S.user=await backend.login(); S.signedIn=!!S.user; if(S.signedIn){ S.ready=false; render(); await loadAll(); S.ready=true; } }catch(err){ S.loginErr="로그인하지 못했어요. 다시 시도해 주세요."; } render(); }
   else if(a==="logout"){ await backend.logout(); S.user=null; S.signedIn=false; S.sessions=[]; render(); }
-  else if(a==="tab"){ S.tab=t.dataset.t; S.view=null; render(); window.scrollTo(0,0); }
-  else if(a==="pick"){ S.picking=true; render(); window.scrollTo(0,0); }
-  else if(a==="unpick"){ S.picking=false; render(); }
-  else if(a==="mentor") setMentor(t.dataset.id);
+  else if(a==="tab"){ S.tab=t.dataset.t; S.view=null; if(S.tab==="me") S.newCard=null; render(); window.scrollTo(0,0); }
+  else if(a==="wk"){ S.weekOff=Math.max(0,(S.weekOff||0)+(+t.dataset.d)); render(); }
+  else if(a==="copyrep"){
+    const box=$("#repcopy");
+    try { await navigator.clipboard.writeText(S.reportText); toast("복사했어요. 카톡에 붙여넣기 하세요"); }
+    catch(_){ box.innerHTML=`<textarea rows="8" readonly style="margin-top:8px">${esc(S.reportText)}</textarea><div class="muted">자동 복사가 안 돼서 아래 글을 길게 눌러 복사해 주세요.</div>`; }
+  }
+  else if(a==="saveset"){
+    const msg=($("#set-msg").value||"").trim().slice(0,200), rt=($("#set-rtext").value||"").trim().slice(0,40), rx=($("#set-rxp").value||"").trim();
+    if(rt && !/^\d+$/.test(rx)){ $("#set-err").textContent="보상 목표 XP를 숫자로 입력해 주세요."; return; }
+    const obj={ dadMsg:msg, rewardText:rt, rewardXp: rt ? +rx : 0 };
+    if(rt && (rt!==S.settings.rewardText || +rx!==+S.settings.rewardXp)) obj.rewardFrom = level().xp;  // 지금부터 모으는 XP
+    saveSettings(obj); render();
+  }
   else if(a==="file") $("#file").click();
   else if(a==="clear"){ S.files=[]; render(); }
   else if(a==="grade") grade();
@@ -653,14 +754,12 @@ document.getElementById("app").addEventListener("click", async e=>{
     const marked = md.bugs.map((b,x)=>b.mark?x:-1).filter(x=>x>=0);
     if(bi>=0 && md.bugs[bi].mark){
       st.found.add(bi);
-      if(marked.every(x=>st.found.has(x))){ p.bugFound=true; p.bugDone=true; queueSave(s); toast("찾았다! +5 XP"); st.msg=""; }
+      if(marked.every(x=>st.found.has(x))){ const lv0=level().lv; p.bugFound=true; p.bugDone=true; queueSave(s); toast("실수 탐정 성공! +5 XP"); confetti(14); celebrate(lv0); st.msg=""; }
       else { st.msg=`찾았어! 아직 ${marked.length-[...st.found].filter(x=>marked.includes(x)).length}군데 더 있어.`; st.msgOk=true; }
     } else { st.msg="그 숫자는 맞게 썼어. 다른 곳을 찾아봐!"; st.msgOk=false; }
     render();
   }
   else if(a==="bugreveal"){ const k=t.dataset.k, s=find(sid), p=s.problems[+t.dataset.i]; if(BUGS[k]) BUGS[k].revealed=true; p.bugDone=true; queueSave(s); render(); }
-  else if(a==="stsay"){ const st=STEPPERS[t.dataset.k]; say(st.frames[st.i].text); }
-  else if(a==="say") say(t.dataset.text);
   else if(a==="tag"){ S.openTag = S.openTag===t.dataset.t ? null : t.dataset.t; render(); }
   else if(a==="del"){ S.delConfirm=t.dataset.id; render(); }
   else if(a==="delno"){ S.delConfirm=null; render(); }
@@ -676,7 +775,7 @@ document.getElementById("app").addEventListener("click", async e=>{
   else if(a==="prac"){ const s=find(sid), p=s.problems[+t.dataset.i], j=+t.dataset.j, key=`${s.id}-${t.dataset.i}-${j}`;
     const inp=$("#pr-"+key), fb=$("#fb-"+key), v=(inp&&inp.value||"").trim();
     if(!v){ fb.className="fb no"; fb.textContent="답을 먼저 입력해 줘."; return; }
-    if(sameNums(v, p.practice[j].a)){ p.practiceSolved=[...(p.practiceSolved||[]), j]; p.practiceDone=(p.practiceDone||0)+1; toast("정답! +15 XP"); queueSave(s); render(); }
+    if(sameNums(v, p.practice[j].a)){ const lv0=level().lv; p.practiceSolved=[...(p.practiceSolved||[]), j]; p.practiceDone=(p.practiceDone||0)+1; p.practiceLog=[...(p.practiceLog||[]), today()]; toast("정답! +15 XP"); confetti(14); celebrate(lv0); queueSave(s); render(); }
     else { fb.className="fb no"; fb.textContent="아깝다. 풀이 과정을 한 번 더 보고 다시!"; }
   }
 });

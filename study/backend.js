@@ -18,6 +18,20 @@ async function loadFirebase(){
   return fb;
 }
 
+/* ---------- 공부방 공통: 시간대 · XP ---------- */
+export const TZ = CONFIG.timeZone || "Australia/Brisbane";   // Word Hop과 같은 기준 (이안이 시간)
+export const LEVEL_XP = 300, STAR_XP = 20;                    // 300 XP마다 레벨 업, Word Hop 별 1개 = 20 XP
+const FMT = new Intl.DateTimeFormat("en-US", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+export function localDate(t = Date.now()){ const p = {}; FMT.formatToParts(new Date(t)).forEach(x => p[x.type] = x.value); return `${p.year}-${p.month}-${p.day}`; }
+export function addDays(d, n){ const x = new Date(d + "T00:00:00Z"); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); }
+export function weekStart(d){ const x = new Date(d + "T00:00:00Z"); return addDays(d, -((x.getUTCDay() + 6) % 7)); }  // 월요일 시작
+export function sessionXP(s){
+  const pd = s.problems.reduce((a,p)=>a+(p.practiceDone||0),0), bf = s.problems.filter(p=>p.bugFound).length;
+  return s.correct*10 + (s.total>0 && s.correct===s.total ? 30 : 0) + pd*15 + bf*5;
+}
+export function wordHopStars(wh){ return wh ? Object.values(wh.stars||{}).reduce((a,v)=>a+(+v||0),0) + (+wh.bonus||0) : 0; }
+export function wordHopXP(wh){ return wordHopStars(wh) * STAR_XP; }
+
 function blobToB64(blob){
   return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(blob); });
 }
@@ -66,6 +80,26 @@ const real = {
     const { F, db } = await loadFirebase();
     await F.setDoc(F.doc(db, "mathStudy", CONFIG.studentId), obj, { merge: true });
   },
+  // Word Hop 기록 읽기 (Word Hop 데이터는 읽기만 하고 바꾸지 않아요)
+  // 아빠(관리자) 계정은 학생 목록에서 이안이 기록을, 이안이 계정은 자기 기록을 읽어요.
+  async getWordHop(){
+    const { F, db, auth } = await loadFirebase();
+    const me = auth.currentUser; if (!me) return null;
+    let pick = null;
+    try {
+      const snap = await F.getDocs(F.collection(db, "wordhop"));
+      const want = String(CONFIG.wordHopStudent || "").toLowerCase();
+      let docs = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+      if (want) docs = docs.filter(d => JSON.stringify(d.profile || {}).toLowerCase().includes(want));
+      else if (docs.length > 1) docs = docs.filter(d => d.uid !== me.uid);
+      pick = docs.sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0))[0] || null;
+    } catch(_) { /* 학생 계정은 목록 대신 자기 기록만 볼 수 있어요 */ }
+    if (!pick){ try { const d = await F.getDoc(F.doc(db, "wordhop", me.uid)); if (d.exists()) pick = { uid: me.uid, ...d.data() }; } catch(_){} }
+    if (!pick) return null;
+    let bonus = 0;
+    try { const c = await F.getDoc(F.doc(db, "wordhop", pick.uid, "control", "main")); if (c.exists()) bonus = (c.data().msgs || []).reduce((a,m)=>a+(+m.bonus||0),0); } catch(_){}
+    return { stars: pick.stars || {}, bonus, log: pick.log || [], days: pick.days || {}, name: (pick.profile && pick.profile.name) || "" };
+  },
   async grade(blob, mentor){
     const { auth } = await loadFirebase();
     if (!auth.currentUser) throw { code: "unauthorized" };
@@ -109,7 +143,12 @@ const demo = {
   async deleteSession(id){ demoStore.sessions = demoStore.sessions.filter(s=>s.id!==id); },
   async getSettings(){ return { ...demoStore.settings }; },
   async setSettings(o){ Object.assign(demoStore.settings, o); },
-  async grade(){ await new Promise(r=>setTimeout(r,1200)); return structuredClone(DEMO_RESULT); }
+  async grade(){ await new Promise(r=>setTimeout(r,1200)); return structuredClone(DEMO_RESULT); },
+  async getWordHop(){
+    const now = Date.now(), day = 864e5;
+    const log = [0,1,2,4].map((d,i) => ({ t: now - d*day - 3600e3, sid: "d"+(10+i), kind: ["learn","write","speak","learn"][i], label: `Day ${10+i}`, n: 10, score: [9,8,10,7][i], ms: 300000 }));
+    return { stars: { d1:3, d2:3, d3:2, d4:3, d5:3, d6:2, d7:3, d8:3, d9:2, d10:3 }, bonus: 2, log, days: {}, name: "Ian" };
+  }
 };
 
 export const backend = DEMO ? demo : real;

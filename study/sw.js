@@ -1,6 +1,6 @@
 // 공부방 서비스 워커: 화면 파일만 캐시해서 빨리 열리게 합니다.
 // 채점 서버, Firebase, 글꼴 요청은 건드리지 않아요.
-const CACHE = "ian-study-v2";
+const CACHE = "ian-study-v5";
 const SHELL = ["./", "index.html", "math.html", "style.css", "backend.js", "config.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
