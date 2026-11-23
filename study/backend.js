@@ -100,17 +100,23 @@ const real = {
     try { const c = await F.getDoc(F.doc(db, "wordhop", pick.uid, "control", "main")); if (c.exists()) bonus = (c.data().msgs || []).reduce((a,m)=>a+(+m.bonus||0),0); } catch(_){}
     return { stars: pick.stars || {}, bonus, log: pick.log || [], days: pick.days || {}, name: (pick.profile && pick.profile.name) || "" };
   },
-  async grade(blob, mentor){
+  async grade(blob, gridBlob){
+    return this._post("/grade", { image: await blobToB64(blob), grid: gridBlob ? await blobToB64(gridBlob) : undefined });
+  },
+  // 틀린 문제만 확대해서 이안이 답을 한 번 더 읽기
+  async reread(blobs, questions){
+    return this._post("/reread", { images: await Promise.all(blobs.map(blobToB64)), questions });
+  },
+  async _post(path, payload){
     const { auth } = await loadFirebase();
     if (!auth.currentUser) throw { code: "unauthorized" };
     const token = await auth.currentUser.getIdToken();
-    const image = await blobToB64(blob);
     let r;
     try {
-      r = await fetch(CONFIG.workerUrl + "/grade", {
+      r = await fetch(CONFIG.workerUrl + path, {
         method: "POST",
         headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
-        body: JSON.stringify({ image, mentor })
+        body: JSON.stringify(payload)
       });
     } catch(e){ throw { code: "network" }; }
     const data = await r.json().catch(() => null);
@@ -144,6 +150,8 @@ const demo = {
   async getSettings(){ return { ...demoStore.settings }; },
   async setSettings(o){ Object.assign(demoStore.settings, o); },
   async grade(){ await new Promise(r=>setTimeout(r,1200)); return structuredClone(DEMO_RESULT); },
+  async reread(_b, qs){ await new Promise(r=>setTimeout(r,300));
+    return { items: qs.map(q => { const p = DEMO_RESULT.problems.find(x=>x.question===q); return { student: p ? p.student : "", rows: [], confidence: "high", box: null }; }) }; },
   async getWordHop(){
     const now = Date.now(), day = 864e5;
     const log = [0,1,2,4].map((d,i) => ({ t: now - d*day - 3600e3, sid: "d"+(10+i), kind: ["learn","write","speak","learn"][i], label: `Day ${10+i}`, n: 10, score: [9,8,10,7][i], ms: 300000 }));
